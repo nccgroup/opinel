@@ -3,11 +3,7 @@
 # Import AWS utils
 from AWSUtils.utils import *
 
-# Import the Amazon SDK
-import boto
-
-# Import other third-party packages
-import argparse
+# Import third-party packages
 import fileinput
 import os
 import re
