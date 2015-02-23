@@ -1,4 +1,6 @@
 # AWSUtils
-Python code shared by Scout2 and AWS-Recipes.
+Python module used by
+[AWS-Recipes](https://github.com/iSECPartners/AWS-Recipes).
 
-Work in progress
+*Note:* This module will eventually be shared with
+[Scout2](https://github.com/iSECPartners/Scout2).
