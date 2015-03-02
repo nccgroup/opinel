@@ -4,6 +4,7 @@
 from AWSUtils.utils import *
 
 # Import third-party packages
+import boto
 import fileinput
 import os
 import re
@@ -19,6 +20,8 @@ re_access_key = re.compile(r'aws_access_key_id')
 re_secret_key = re.compile(r'aws_secret_access_key')
 re_mfa_serial = re.compile(r'aws_mfa_serial')
 re_session_token = re.compile(r'aws_session_token')
+mfa_serial_format = r'^arn:aws:iam::\d+:mfa/[a-zA-Z0-9\+=,.@_-]+$'
+re_mfa_serial_format = re.compile(mfa_serial_format)
 
 aws_credentials_file = os.path.join(os.path.join(os.path.expanduser('~'), '.aws'), 'credentials')
 aws_credentials_file_no_mfa = os.path.join(os.path.join(os.path.expanduser('~'), '.aws'), 'credentials.no-mfa')
@@ -28,6 +31,18 @@ aws_credentials_file_tmp = os.path.join(os.path.join(os.path.expanduser('~'), '.
 ########################################
 ##### Helpers
 ########################################
+
+#
+# Connect to IAM
+#
+def connect_iam(profile_name):
+    try:
+        print 'Connecting to AWS IAM...'
+        session_key_id, session_secret, mfa_serial, session_token = read_creds_from_aws_credentials_file(profile_name)
+        return boto.connect_iam(aws_access_key_id = session_key_id, aws_secret_access_key = session_secret, security_token = session_token)
+    except Exception, e:
+        printException(e)
+        return None
 
 #
 # Fetch the IAM user name associated with the access key in use
@@ -93,6 +108,18 @@ def prompt_4_mfa_code():
     return mfa_code
 
 #
+# Prompt for MFA serial
+#
+def prompt_4_mfa_serial():
+    while True:
+        mfa_serial = prompt_4_value('Enter your MFA serial: ')
+        if re_mfa_serial_format.match(mfa_serial):
+            break
+        else:
+            print 'Error, your MFA serial must be of the form %s' % mfa_serial_format
+    return mfa_serial
+
+#
 # Read credentials from AWS config file
 #
 def read_creds_from_aws_credentials_file(profile_name, credentials_file = aws_credentials_file):
@@ -136,10 +163,13 @@ def write_creds_to_aws_credentials_file(profile_name, key_id = None, secret = No
                 profile_found = True
                 profile_ever_found = True
                 session_token_written = False
+                mfa_serial_written = False
             else:
-                # If we were editing the profile and haven't found a session_token line, write it before closing the profile
-                if profile_found and session_token and not session_token_written:
-                    print 'aws_session_token = %s' % session_token
+                if profile_found:
+                    if session_token and not session_token_written:
+                        print 'aws_session_token = %s' % session_token
+                    if mfa_serial and not mfa_serial_written:
+                        print 'aws_mfa_serial = %s' % mfa_serial
                 profile_found = False
             print line.rstrip()
         elif profile_found:
@@ -155,16 +185,27 @@ def write_creds_to_aws_credentials_file(profile_name, key_id = None, secret = No
         else:
             print line.rstrip()
 
+    # Complete the profile if needed
+    if profile_found:
+        with open(credentials_file, 'a') as f:
+            complete_profile(f, session_token, session_token_written, mfa_serial, mfa_serial_written)
+
     # Add new profile if only found in .no-mfa configuration file
     if not profile_ever_found:
         with open(credentials_file, 'a') as f:
             f.write('[%s]\n' % profile_name)
             f.write('aws_access_key_id = %s\n' % key_id)
             f.write('aws_secret_access_key = %s\n' % secret)
-            if session_token:
-                f.write('aws_session_token = %s\n' % session_token)
-            if mfa_serial:
-                f.write('aws_mfa_serial = %s\n' % mfa_serial)
+            complete_profile(f, session_token, session_token_written, mfa_serial, mfa_serial_written)
+
+#
+# Append session token and mfa serial if needed
+#
+def complete_profile(f, session_token, session_token_written, mfa_serial, mfa_serial_written):
+    if session_token:
+        f.write('aws_session_token = %s\n' % session_token)
+    if mfa_serial:
+        f.write('aws_mfa_serial = %s\n' % mfa_serial)
 
 
 ########################################
