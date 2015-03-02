@@ -153,6 +153,7 @@ def write_creds_to_aws_credentials_file(profile_name, key_id = None, secret = No
     profile_found = False
     profile_ever_found = False
     session_token_written = False
+    mfa_serial_written = False
     # Copy credentials.no-mfa if target file does not exist
     if not os.path.isfile(credentials_file):
         shutil.copyfile(aws_credentials_file_no_mfa, credentials_file)
