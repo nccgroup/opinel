@@ -15,7 +15,7 @@ import shutil
 ##### Globals
 ########################################
 
-re_profile_name = re.compile(r'\[\w+\]')
+re_profile_name = re.compile(r'\[.*]')
 re_access_key = re.compile(r'aws_access_key_id')
 re_secret_key = re.compile(r'aws_secret_access_key')
 re_mfa_serial = re.compile(r'aws_mfa_serial')
@@ -169,8 +169,10 @@ def write_creds_to_aws_credentials_file(profile_name, key_id = None, secret = No
                 if profile_found:
                     if session_token and not session_token_written:
                         print 'aws_session_token = %s' % session_token
+                        session_token_written = True
                     if mfa_serial and not mfa_serial_written:
                         print 'aws_mfa_serial = %s' % mfa_serial
+                        mfa_serial_written = True
                 profile_found = False
             print line.rstrip()
         elif profile_found:
@@ -203,9 +205,9 @@ def write_creds_to_aws_credentials_file(profile_name, key_id = None, secret = No
 # Append session token and mfa serial if needed
 #
 def complete_profile(f, session_token, session_token_written, mfa_serial, mfa_serial_written):
-    if session_token:
+    if session_token and not session_token_written:
         f.write('aws_session_token = %s\n' % session_token)
-    if mfa_serial:
+    if mfa_serial and not mfa_serial_written:
         f.write('aws_mfa_serial = %s\n' % mfa_serial)
 
 
