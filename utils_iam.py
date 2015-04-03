@@ -45,6 +45,64 @@ def connect_iam(profile_name):
         return None
 
 #
+# Delete IAM user
+#
+def delete_user(iam_connection, user, stage = 5, serial = None):
+    # Fetch MFA serial if needed
+    if not serial and stage >= 4:
+        try:
+            mfa_devices = iam_connection.get_all_mfa_devices(user)
+            serial = mfa_devices.list_mfa_devices_response.list_mfa_devices_result.mfa_devices[0].serial_number
+        except Exception, e:
+            printException(e)
+            print 'Failed to fetch MFA device serial number for user %s' % user
+            pass
+    # Deactivate MFA device
+    if stage >= 5:
+        try:
+            iam_connection.deactivate_mfa_device(user, serial)
+        except Exception, e:
+            printException(e)
+            print 'Failed to deactivate MFA device.'
+            pass
+    # Delete MFA device
+    if stage >= 4:
+        try:
+            # Pending merge of https://github.com/boto/boto/pull/3010
+            print 'Boto does not support MFA device deletion yet. You\'ll need to run the following command:'
+            print 'aws --profile %s iam delete-virtual-mfa-device --serial-number %s' % ('XXX', serial)
+        except Exception, e:
+            printException(e)
+            pass
+    # Remove IAM user from groups
+    if stage >= 3:
+        try:
+            groups = iam_connection.get_groups_for_user(user)
+            groups = groups['list_groups_for_user_response']['list_groups_for_user_result']['groups']
+            for group in groups:
+                iam_connection.remove_user_from_group(group['group_name'], user)
+        except Exception, e:
+            printException(e)
+            print 'Failed to remove user from groups.'
+            pass
+    # Delete login profile
+    if stage >= 2:
+        try:
+            iam_connection.delete_login_profile(user)
+        except Exception, e:
+            printException(e)
+            print 'Failed to delete login profile.'
+            pass
+    # Delete IAM user
+    if stage >= 1:
+        try:
+            iam_connection.delete_user(user)
+        except Exception, e:
+            printException(e)
+            print 'Failed to delete user.'
+            pass
+
+#
 # Fetch the IAM user name associated with the access key in use
 #
 def fetch_current_user_name(iam_connection, aws_key_id):
