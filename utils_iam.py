@@ -128,21 +128,24 @@ def read_creds_from_aws_credentials_file(profile_name, credentials_file = aws_cr
     mfa_serial = None
     session_token = None
     re_use_profile = re.compile(r'\[%s\]' % profile_name)
-    with open(credentials_file, 'rt') as credentials:
-        for line in credentials:
-            if re_use_profile.match(line):
-                profile_found = True
-            elif re_profile_name.match(line):
-                profile_found = False
-            if profile_found:
-                if re.match(r'aws_access_key_id', line):
-                    key_id = (line.split(' ')[2]).rstrip()
-                elif re.match(r'aws_secret_access_key', line):
-                    secret = (line.split(' ')[2]).rstrip()
-                elif re_mfa_serial.match(line):
-                    mfa_serial = (line.split(' ')[2]).rstrip()
-                elif re.match(r'aws_session_token', line):
-                    session_token = (line.split(' ')[2]).rstrip()
+    try:
+        with open(credentials_file, 'rt') as credentials:
+            for line in credentials:
+                if re_use_profile.match(line):
+                    profile_found = True
+                elif re_profile_name.match(line):
+                    profile_found = False
+                if profile_found:
+                    if re.match(r'aws_access_key_id', line):
+                        key_id = (line.split(' ')[2]).rstrip()
+                    elif re.match(r'aws_secret_access_key', line):
+                        secret = (line.split(' ')[2]).rstrip()
+                    elif re_mfa_serial.match(line):
+                        mfa_serial = (line.split(' ')[2]).rstrip()
+                    elif re.match(r'aws_session_token', line):
+                        session_token = (line.split(' ')[2]).rstrip()
+    except Exception, e:
+        pass
     return key_id, secret, mfa_serial, session_token
 
 #
@@ -154,9 +157,13 @@ def write_creds_to_aws_credentials_file(profile_name, key_id = None, secret = No
     profile_ever_found = False
     session_token_written = False
     mfa_serial_written = False
-    # Copy credentials.no-mfa if target file does not exist
     if not os.path.isfile(credentials_file):
-        shutil.copyfile(aws_credentials_file_no_mfa, credentials_file)
+        if os.path.isfile(aws_credentials_file_no_mfa):
+            # copy credentials.no-mfa if target file does not exist
+            shutil.copyfile(aws_credentials_file_no_mfa, credentials_file)
+        else:
+            # Create an empty file if credentials.no-mfa does not exist
+            open(credentials_file, 'a').close()
     # Open and parse/edit file
     for line in fileinput.input(credentials_file, inplace=True):
         if re_profile_name.match(line):
