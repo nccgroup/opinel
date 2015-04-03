@@ -170,8 +170,6 @@ def write_creds_to_aws_credentials_file(profile_name, key_id = None, secret = No
             if profile_name in line:
                 profile_found = True
                 profile_ever_found = True
-                session_token_written = False
-                mfa_serial_written = False
             else:
                 if profile_found:
                     if session_token and not session_token_written:
@@ -187,6 +185,9 @@ def write_creds_to_aws_credentials_file(profile_name, key_id = None, secret = No
                 print 'aws_access_key_id = %s' % key_id
             elif re_secret_key.match(line) and secret:
                 print 'aws_secret_access_key = %s' % secret
+            elif re_mfa_serial.match(line) and mfa_serial:
+                print 'aws_mfa_serial = %s' % mfa_serial
+                mfa_serial_written = True
             elif re_session_token.match(line) and session_token:
                 print 'aws_session_token = %s' % session_token
                 session_token_written = True
