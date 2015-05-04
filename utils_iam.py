@@ -29,7 +29,22 @@ def connect_iam(profile_name):
 #
 # Delete IAM user
 #
-def delete_user(iam_connection, user, stage = 5, serial = None):
+def delete_user(iam_connection, user, stage = 6, serial = None):
+    # Delete access keys
+    if stage >= 6:
+        try:
+            # Get all keys
+            aws_keys = get_all_access_keys(iam_connection, user)
+            for aws_key in aws_keys:
+                try:
+                    iam_connection.delete_access_key(aws_key['access_key_id'], user)
+                except Exception, e:
+                    printException(e)
+                    pass
+        except Exception, e:
+            printException(e)
+            print 'Failed to delete access keys.'
+            pass
     # Fetch MFA serial if needed
     if not serial and stage >= 4:
         try:
@@ -104,6 +119,13 @@ def fetch_current_user_name(iam_connection, aws_key_id):
     except Exception, e:
         printException(e)
     return user_name
+
+#
+# Get all access keys for a given user
+#
+def get_all_access_keys(iam_connection, user_name):
+    access_keys = iam_connection.get_all_access_keys(user_name)
+    return access_keys.list_access_keys_response.list_access_keys_result.access_key_metadata
 
 #
 # Handle truncated responses
