@@ -15,7 +15,6 @@ import sys
 import traceback
 import urllib2
 
-
 ########################################
 # Globals
 ########################################
@@ -118,6 +117,45 @@ def manage_dictionary(dictionary, key, init, callback=None):
 ##################################s######
 
 #
+# Fetch STS credentials
+#
+def init_sts_session(key_id, secret, mfa_serial = None, mfa_code = None):
+    if not mfa_serial:
+        # Prompt for MFA serial
+        mfa_serial = prompt_4_mfa_serial()
+        save_no_mfa_credentials = True
+    if not mfa_code:
+        # Prompt for MFA code
+        mfa_code = prompt_4_mfa_code()
+    # Fetch session token and set the duration to 8 hours
+    sts_connection = boto.connect_sts(key_id, secret)
+    sts_response = sts_connection.get_session_token(mfa_serial_number = mfa_serial, mfa_token = mfa_code, duration = 28800)
+    return sts_response.access_key, sts_response.secret_key, sts_response.session_token
+
+#
+# Read credentials from anywhere
+#
+def read_creds(profile_name, csv_file = None, mfa_serial = None, mfa_code = None):
+    key_id = None
+    secret = None
+    token = None
+    if csv_file:
+        key_id, secret, mfa_serial = read_creds_from_csv(csv_file)
+    else:
+        # Read from ~/.aws/credentials
+        key_id, secret, mfa_serial, token = read_creds_from_aws_credentials_file(profile_name)
+        if not key_id:
+            # Read from EC2 instance metadata
+            key_id, secret, token = read_creds_from_ec2_instance_metadata()
+        if not key_id:
+            # Read from environment variables
+            key_id, secret, token = read_creds_from_environment_variables()
+    # If we have an MFA serial number or MFA code and no token yet, initiate an STS session
+    if (mfa_serial or mfa_code) and not token:
+        key_id, secret, token = init_sts_session(key_id, secret, mfa_serial, mfa_code)
+    return key_id, secret, token
+
+#
 # Read credentials from AWS config file
 #
 def read_creds_from_aws_credentials_file(profile_name, credentials_file = aws_credentials_file):
@@ -134,13 +172,13 @@ def read_creds_from_aws_credentials_file(profile_name, credentials_file = aws_cr
                 elif re_profile_name.match(line):
                     profile_found = False
                 if profile_found:
-                    if re.match(r'aws_access_key_id', line):
+                    if re_access_key.match(line):
                         key_id = (line.split(' ')[2]).rstrip()
-                    elif re.match(r'aws_secret_access_key', line):
+                    elif re_secret_key.match(line):
                         secret = (line.split(' ')[2]).rstrip()
                     elif re_mfa_serial.match(line):
                         mfa_serial = (line.split(' ')[2]).rstrip()
-                    elif re.match(r'aws_session_token', line):
+                    elif re_session_token.match(line):
                         security_token = (line.split(' ')[2]).rstrip()
     except Exception, e:
         pass
@@ -169,6 +207,14 @@ def read_creds_from_csv(filename):
 #
 # Read credentials from EC2 instance metadata (IAM role)
 #
+def read_role_from_ec2_instance_metadata():
+    metadata = boto.utils.get_instance_metadata(timeout=1, num_retries=1)
+    if metadata:
+	if 'iam' in metadata and 'security-credentials' in metadata['iam']:
+	    if len(metadata['iam']['security-credentials']) > 0:
+		return 'ouaich'
+    return None
+
 def read_creds_from_ec2_instance_metadata():
     key_id = None
     secret = None
@@ -184,7 +230,7 @@ def read_creds_from_ec2_instance_metadata():
 #
 # Read credentials from environment variables
 #
-def fetch_creds_from_environment_variables(profile_name):
+def read_creds_from_environment_variables():
     key_id = None
     secret = None
     session_token = None
@@ -317,23 +363,3 @@ def prompt_4_yes_no(question):
             return False
         else:
             print '\'%s\' is not a valid answer. Enter \'yes\'(y) or \'no\'(n).' % choice
-
-
-########################################
-# Legacy AWS Credentials read functions
-########################################
-
-
-
-
-def fetch_sts_credentials(key_id, secret, mfa_serial, mfa_code):
-    if not mfa_serial or len(mfa_serial) < 1:
-        print 'Error, you need to provide your MFA device\'s serial number.'
-        return None, None, None
-    if not mfa_code or len(mfa_code) < 1:
-        print 'Error, you need to provide the code displayed by your MFA device.'
-        return None, None, None
-    sts_connection = boto.connect_sts(key_id, secret)
-    # For now, don't set the duration and use default 12hours
-    sts_response = sts_connection.get_session_token(mfa_serial_number = mfa_serial, mfa_token = mfa_code[0])
-    return sts_response.access_key, sts_response.secret_key, sts_response.session_token
