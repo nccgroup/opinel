@@ -3,7 +3,7 @@
 # Import AWS utils
 from AWSUtils.utils_iam import *
 
-# Import the Amazon SDK
+# Import third-party packages
 import boto
 
 
