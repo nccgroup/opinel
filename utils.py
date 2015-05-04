@@ -3,6 +3,7 @@
 # Import third-party packages
 import argparse
 import boto
+from boto import utils
 from distutils import dir_util
 import copy
 import json
@@ -207,14 +208,6 @@ def read_creds_from_csv(filename):
 #
 # Read credentials from EC2 instance metadata (IAM role)
 #
-def read_role_from_ec2_instance_metadata():
-    metadata = boto.utils.get_instance_metadata(timeout=1, num_retries=1)
-    if metadata:
-	if 'iam' in metadata and 'security-credentials' in metadata['iam']:
-	    if len(metadata['iam']['security-credentials']) > 0:
-		return 'ouaich'
-    return None
-
 def read_creds_from_ec2_instance_metadata():
     key_id = None
     secret = None
@@ -346,9 +339,40 @@ def prompt_4_mfa_serial():
 #
 # Prompt for a value
 #
-def prompt_4_value(question):
-    sys.stdout.write(question)
-    return raw_input()
+def prompt_4_value(question, choices = None, default = None, display_choices = True, display_indices = False, authorize_list = False):
+    if choices and len(choices) == 1 and choices[0] == 'yes_no':
+        return prompt_4_yes_no(question)
+    if choices and display_choices and not display_indices:
+        question = question + ' (' + '/'.join(choices) + ')'
+    while True:
+        if choices and display_indices:
+            for c in choices:
+                print '%3d. %s' % (choices.index(c), c)
+	sys.stdout.write(question + '? ')
+        choice = raw_input()
+        if choices:
+            user_choices = choice.split(',')
+            if not authorize_list and len(user_choices) > 1:
+                print 'Multiple values are not supported; please enter a single value.'
+            else:
+                choice_valid = True
+                if display_indices and int(choice) < len(choices):
+                    choice = choices[int(choice)]
+                else:
+                    for c in user_choices:
+                        if not c in choices:
+                            print 'Invalid value (%s).' % c
+                            choice_valid = False
+                            break
+                if choice_valid:
+                    return choice
+        elif not choice and default:
+            if prompt_4_yes_no('Use the default value (' + default + ')'):
+                return default
+        elif not choice:
+            print 'You cannot leave this parameter empty.'
+        elif prompt_4_yes_no('You entered "' + choice + '". Is that correct'):
+            return choice
 
 #
 # Prompt for yes/no answer
