@@ -6,6 +6,7 @@ import boto
 from distutils import dir_util
 import copy
 import json
+import fileinput
 import os
 import re
 import requests
@@ -101,7 +102,7 @@ def get_environment_name(args):
         environment_name = args.profile[0]
     elif args.environment_name:
         environment_name = args.environment_name[0]
-    return environment_name    
+    return environment_name
 
 def manage_dictionary(dictionary, key, init, callback=None):
     if not str(key) in dictionary:
@@ -115,32 +116,6 @@ def manage_dictionary(dictionary, key, init, callback=None):
 ########################################
 # Credentials read/write functions
 ##################################s######
-
-#
-# Prompt for MFA code
-#
-def prompt_4_mfa_code():
-    while True:
-        mfa_code = prompt_4_value('Enter your MFA code: ')
-        try:
-            int(mfa_code)
-            mfa_code[5]
-            break
-        except:
-            print 'Error, your MFA code must only consist of digits and be at least 6 characters long'
-    return mfa_code
-
-#
-# Prompt for MFA serial
-#
-def prompt_4_mfa_serial():
-    while True:
-        mfa_serial = prompt_4_value('Enter your MFA serial: ')
-        if re_mfa_serial_format.match(mfa_serial):
-            break
-        else:
-            print 'Error, your MFA serial must be of the form %s' % mfa_serial_format
-    return mfa_serial
 
 #
 # Read credentials from AWS config file
@@ -240,6 +215,58 @@ def complete_profile(f, session_token, session_token_written, mfa_serial, mfa_se
         f.write('aws_session_token = %s\n' % session_token)
     if mfa_serial and not mfa_serial_written:
         f.write('aws_mfa_serial = %s\n' % mfa_serial)
+
+
+########################################
+##### Prompt functions
+########################################
+
+#
+# Prompt for MFA code
+#
+def prompt_4_mfa_code():
+    while True:
+        mfa_code = prompt_4_value('Enter your MFA code: ')
+        try:
+            int(mfa_code)
+            mfa_code[5]
+            break
+        except:
+            print 'Error, your MFA code must only consist of digits and be at least 6 characters long'
+    return mfa_code
+
+#
+# Prompt for MFA serial
+#
+def prompt_4_mfa_serial():
+    while True:
+        mfa_serial = prompt_4_value('Enter your MFA serial: ')
+        if re_mfa_serial_format.match(mfa_serial):
+            break
+        else:
+            print 'Error, your MFA serial must be of the form %s' % mfa_serial_format
+    return mfa_serial
+
+#
+# Prompt for a value
+#
+def prompt_4_value(question):
+    sys.stdout.write(question)
+    return raw_input()
+
+#
+# Prompt for yes/no answer
+#
+def prompt_4_yes_no(question):
+    while True:
+        sys.stdout.write(question + ' (y/n)? ')
+        choice = raw_input().lower()
+        if choice == 'yes' or choice == 'y':
+            return True
+        elif choice == 'no' or choice == 'n':
+            return False
+        else:
+            print '\'%s\' is not a valid answer. Enter \'yes\'(y) or \'no\'(n).' % choice
 
 
 ########################################
