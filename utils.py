@@ -20,7 +20,7 @@ import urllib2
 # Globals
 ########################################
 
-re_profile_name = re.compile(r'\[.*]')
+re_profile_name = re.compile(r'\[(.*)\]')
 re_access_key = re.compile(r'aws_access_key_id')
 re_secret_key = re.compile(r'aws_secret_access_key')
 re_mfa_serial = re.compile(r'aws_mfa_serial')
@@ -234,6 +234,23 @@ def read_creds_from_environment_variables():
         if 'AWS_SESSION_TOKEN' in os.environ:
             session_token = os.environ['AWS_SESSION_TOKEN']
     return key_id, secret, session_token
+
+#
+# Show profile names from ~/.aws/credentials and ~/.aws/credentials.no-mfa
+#
+def show_profiles_from_aws_credentials_file():
+    profiles = []
+    files = [ aws_credentials_file, aws_credentials_file_no_mfa ]
+    for filename in files:
+        if os.path.isfile(filename):
+            with open(filename) as f:
+                lines = f.readlines()
+                for line in lines:
+                    groups = re_profile_name.match(line)
+                    if groups:
+                        profiles.append(groups.groups()[0])
+    for profile in set(profiles):
+        print ' * %s' % profile
 
 #
 # Write credentials to AWS config file
