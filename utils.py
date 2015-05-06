@@ -4,15 +4,17 @@
 import argparse
 import boto
 from boto import utils
-from distutils import dir_util
 import copy
+from distutils import dir_util
 import json
 import fileinput
 import os
+from Queue import Queue
 import re
 import requests
 import shutil
 import sys
+from threading import Event, Thread
 import traceback
 import urllib2
 
@@ -76,6 +78,7 @@ def configPrintException(enable):
 ########################################
 
 def check_boto_version():
+    print 'Checking the version of boto...'
     min_boto_version = '2.31.1'
     latest_boto_version = 0
     if boto.Version < min_boto_version:
@@ -112,6 +115,23 @@ def manage_dictionary(dictionary, key, init, callback=None):
             callback(dictionary[key])
     return dictionary
 
+def thread_work(connection_info, service_info, targets, function, display_function, service_params = {}, num_threads = 0):
+    # Status
+    stop_display_thread = Event()
+    display_thread = Thread(target=display_function, args=(service_info, stop_display_thread,))
+    display_thread.start()
+    # Init queue and threads
+    q = Queue(maxsize=0)
+    if not num_threads:
+        num_threads = len(targets)
+    for i in range(num_threads):
+        worker = Thread(target=function, args=(connection_info, q, service_params))
+        worker.setDaemon(True)
+        worker.start()
+    for target in targets:
+        q.put([service_info, target])
+    q.join()
+    stop_display_thread.set()
 
 ########################################
 # Credentials read/write functions
