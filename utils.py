@@ -356,7 +356,7 @@ def prompt_4_mfa_serial():
 #
 # Prompt for a value
 #
-def prompt_4_value(question, choices = None, default = None, display_choices = True, display_indices = False, authorize_list = False):
+def prompt_4_value(question, choices = None, default = None, display_choices = True, display_indices = False, authorize_list = False, is_question = False):
     if choices and len(choices) == 1 and choices[0] == 'yes_no':
         return prompt_4_yes_no(question)
     if choices and display_choices and not display_indices:
@@ -365,7 +365,9 @@ def prompt_4_value(question, choices = None, default = None, display_choices = T
         if choices and display_indices:
             for c in choices:
                 print '%3d. %s' % (choices.index(c), c)
-	sys.stdout.write(question + '? ')
+        if is_question:
+            question = question + '? '
+	sys.stdout.write(question)
         choice = raw_input()
         if choices:
             user_choices = choice.split(',')
