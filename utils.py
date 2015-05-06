@@ -77,6 +77,18 @@ def configPrintException(enable):
 # Common functions
 ########################################
 
+#
+# Build the list of target region names
+#
+def build_region_list(boto_regions, chosen_regions):
+    boto_region_names = []
+    for region in boto_regions:
+        boto_region_names.append(region.name)
+    if len(chosen_regions):
+        return list((Counter(boto_region_names) & Counter(chosen_regions)).elements())
+    else:
+        return boto_region_names
+
 def check_boto_version():
     print 'Checking the version of boto...'
     min_boto_version = '2.31.1'

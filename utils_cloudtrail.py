@@ -6,6 +6,7 @@ from AWSUtils.utils import *
 # Import third-party packages
 import boto
 from boto import cloudtrail
+from collections import Counter
 
 
 ########################################
@@ -21,3 +22,10 @@ def connect_cloudtrail(key_id, secret, session_token, region_name):
     except Exception, e:
         printException(e)
         return None
+
+#
+# Get the list of trails for a given region
+#
+def get_trails(cloudtrail_connection):
+    trails = cloudtrail_connection.describe_trails()
+    return trails['trailList']
