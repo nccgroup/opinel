@@ -115,11 +115,12 @@ def manage_dictionary(dictionary, key, init, callback=None):
             callback(dictionary[key])
     return dictionary
 
-def thread_work(connection_info, service_info, targets, function, display_function, service_params = {}, num_threads = 0):
-    # Status
-    stop_display_thread = Event()
-    display_thread = Thread(target=display_function, args=(service_info, stop_display_thread,))
-    display_thread.start()
+def thread_work(connection_info, service_info, targets, function, display_function = None, service_params = {}, num_threads = 0):
+    if display_function:
+        # Status
+        stop_display_thread = Event()
+        display_thread = Thread(target=display_function, args=(service_info, stop_display_thread,))
+        display_thread.start()
     # Init queue and threads
     q = Queue(maxsize=0)
     if not num_threads:
@@ -131,7 +132,8 @@ def thread_work(connection_info, service_info, targets, function, display_functi
     for target in targets:
         q.put([service_info, target])
     q.join()
-    stop_display_thread.set()
+    if display_function:
+        stop_display_thread.set()
 
 ########################################
 # Credentials read/write functions
