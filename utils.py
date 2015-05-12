@@ -175,22 +175,19 @@ def read_creds(profile_name, csv_file = None, mfa_serial = None, mfa_code = None
     secret = None
     token = None
     serial = None
-    # If they passed in mfa_serial via CLI, use that value
-    if mfa_serial != None:
-        serial = mfa_serial
     if csv_file:
-        key_id, secret, mfa_serial = read_creds_from_csv(csv_file)
+        key_id, secret, serial = read_creds_from_csv(csv_file)
     else:
         # Read from ~/.aws/credentials
-        key_id, secret, mfa_serial, token = read_creds_from_aws_credentials_file(profile_name)
+        key_id, secret, serial, token = read_creds_from_aws_credentials_file(profile_name)
         if not key_id:
             # Read from EC2 instance metadata
             key_id, secret, token = read_creds_from_ec2_instance_metadata()
         if not key_id:
             # Read from environment variables
             key_id, secret, token = read_creds_from_environment_variables()
-    # If serial not passed in, give it results from csv or credentials_file
-    if serial == None:
+    # If serial passed in, override serials found through other means
+    if mfa_serial != None:
         serial = mfa_serial
     # If we have an MFA serial number or MFA code and no token yet, initiate an STS session
     if (serial or mfa_code) and not token:
