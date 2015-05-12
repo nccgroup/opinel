@@ -174,6 +174,10 @@ def read_creds(profile_name, csv_file = None, mfa_serial = None, mfa_code = None
     key_id = None
     secret = None
     token = None
+    serial = None
+    # If they passed in mfa_serial via CLI, use that value
+    if mfa_serial != None:
+        serial = mfa_serial
     if csv_file:
         key_id, secret, mfa_serial = read_creds_from_csv(csv_file)
     else:
@@ -185,9 +189,12 @@ def read_creds(profile_name, csv_file = None, mfa_serial = None, mfa_code = None
         if not key_id:
             # Read from environment variables
             key_id, secret, token = read_creds_from_environment_variables()
+    # If serial not passed in, give it results from csv or credentials_file
+    if serial == None:
+        serial = mfa_serial
     # If we have an MFA serial number or MFA code and no token yet, initiate an STS session
-    if (mfa_serial or mfa_code) and not token:
-        key_id, secret, token = init_sts_session(key_id, secret, mfa_serial, mfa_code)
+    if (serial or mfa_code) and not token:
+        key_id, secret, token = init_sts_session(key_id, secret, serial, mfa_code)
     return key_id, secret, token
 
 #
