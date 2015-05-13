@@ -170,7 +170,7 @@ def init_sts_session(key_id, secret, mfa_serial = None, mfa_code = None):
 #
 # Read credentials from anywhere
 #
-def read_creds(profile_name, csv_file = None, mfa_serial = None, mfa_code = None):
+def read_creds(profile_name, csv_file = None, mfa_serial_arg = None, mfa_code = None):
     key_id = None
     secret = None
     token = None
@@ -185,6 +185,9 @@ def read_creds(profile_name, csv_file = None, mfa_serial = None, mfa_code = None
         if not key_id:
             # Read from environment variables
             key_id, secret, token = read_creds_from_environment_variables()
+    # If an MFA serial was provided as an argument, discard whatever we found in config file
+    if mfa_serial_arg:
+        mfa_serial = mfa_serial_arg
     # If we have an MFA serial number or MFA code and no token yet, initiate an STS session
     if (mfa_serial or mfa_code) and not token:
         key_id, secret, token = init_sts_session(key_id, secret, mfa_serial, mfa_code)
