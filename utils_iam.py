@@ -26,6 +26,20 @@ def connect_iam(key_id, secret, session_token):
         return None
 
 #
+# Create default groups
+#
+def create_default_groups(iam_connection, common_groups, category_groups, dry_run):
+    all_groups = common_groups + category_groups
+    for group in all_groups:
+        try:
+            print 'Creating group \'%s\'...' % group
+            if not dry_run:
+                iam_connection.create_group(group)
+        except Exception, e:
+            printException(e)
+            pass
+
+#
 # Delete IAM user
 #
 def delete_user(iam_connection, user, stage = 6, serial = None):

@@ -276,6 +276,34 @@ def read_creds_from_environment_variables():
     return key_id, secret, session_token
 
 #
+# Read default argument values for a recipe
+#
+def read_profile_default_args(recipe_name):
+    # h4ck to have an early read of the profile name
+    for i, arg in enumerate(sys.argv):
+        if arg == '--profile' and len(sys.argv) >= i + 1:
+            profile_name = sys.argv[i + 1]
+    saved_args = {}
+    recipes_dir = os.path.join(os.path.join(os.path.expanduser('~'), '.aws'), 'recipes')
+    recipe_file = os.path.join(recipes_dir, profile_name + '.json')
+    if os.path.isfile(recipe_file):
+        with open(recipe_file, 'rt') as f:
+            config = json.load(f)
+        t = re.compile(r'(.*)?\.py')
+        for key in config:
+            if not t.match(key):
+                saved_args[key] = config[key]
+            elif key == parser.prog:
+                saved_args.update(config[key])
+    return saved_args
+
+#
+# Returns the argument default value, customized by the user or default programmed value
+#
+def set_profile_default(saved_args, key, default):
+    return saved_args[key] if key in saved_args else default
+
+#
 # Show profile names from ~/.aws/credentials and ~/.aws/credentials.no-mfa
 #
 def show_profiles_from_aws_credentials_file():
