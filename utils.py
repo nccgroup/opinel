@@ -29,6 +29,8 @@ re_mfa_serial = re.compile(r'aws_mfa_serial')
 re_session_token = re.compile(r'aws_session_token')
 mfa_serial_format = r'^arn:aws:iam::\d+:mfa/[a-zA-Z0-9\+=,.@_-]+$'
 re_mfa_serial_format = re.compile(mfa_serial_format)
+re_gov_region = re.compile(r'(.*)?-gov-(.*)?')
+re_cn_region = re.compile(r'^cn-(.*)?')
 
 aws_credentials_file = os.path.join(os.path.join(os.path.expanduser('~'), '.aws'), 'credentials')
 aws_credentials_file_no_mfa = os.path.join(os.path.join(os.path.expanduser('~'), '.aws'), 'credentials.no-mfa')
@@ -80,10 +82,11 @@ def configPrintException(enable):
 #
 # Build the list of target region names
 #
-def build_region_list(boto_regions, chosen_regions):
+def build_region_list(boto_regions, chosen_regions = [], include_gov = False, include_cn = False):
     boto_region_names = []
     for region in boto_regions:
-        boto_region_names.append(region.name)
+        if (not re_gov_region.match(region.name) or include_gov) and (not re_cn_region.match(region.name) or include_cn):
+            boto_region_names.append(region.name)
     if len(chosen_regions):
         return list((Counter(boto_region_names) & Counter(chosen_regions)).elements())
     else:
