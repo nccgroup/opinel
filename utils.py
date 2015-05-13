@@ -149,7 +149,7 @@ def thread_work(connection_info, service_info, targets, function, display_functi
 
 ########################################
 # Credentials read/write functions
-##################################s######
+########################################
 
 #
 # Fetch STS credentials
@@ -366,7 +366,7 @@ def complete_profile(f, session_token, session_token_written, mfa_serial, mfa_se
 #
 def prompt_4_mfa_code():
     while True:
-        mfa_code = prompt_4_value('Enter your MFA code: ')
+        mfa_code = prompt_4_value('Enter your MFA code: ', no_confirm = True)
         try:
             int(mfa_code)
             mfa_code[5]
@@ -390,7 +390,7 @@ def prompt_4_mfa_serial():
 #
 # Prompt for a value
 #
-def prompt_4_value(question, choices = None, default = None, display_choices = True, display_indices = False, authorize_list = False, is_question = False):
+def prompt_4_value(question, choices = None, default = None, display_choices = True, display_indices = False, authorize_list = False, is_question = False, no_confirm = False):
     if choices and len(choices) == 1 and choices[0] == 'yes_no':
         return prompt_4_yes_no(question)
     if choices and display_choices and not display_indices:
@@ -424,7 +424,7 @@ def prompt_4_value(question, choices = None, default = None, display_choices = T
                 return default
         elif not choice:
             print 'You cannot leave this parameter empty.'
-        elif prompt_4_yes_no('You entered "' + choice + '". Is that correct'):
+        elif no_confirm or prompt_4_yes_no('You entered "' + choice + '". Is that correct'):
             return choice
 
 #
