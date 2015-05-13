@@ -11,7 +11,10 @@ import boto
 ##### Helpers
 ########################################
 
-def init_sts_session_and_save_in_credentials(profile_name, credentials_file = aws_credentials_file_no_mfa, mfa_code = None):
+#
+# Fetch STS credentials and store them in a file
+#
+def init_sts_session_and_save_in_credentials(profile_name, credentials_file = aws_credentials_file_no_mfa, mfa_code = None, mfa_serial_arg = None):
     save_no_mfa_credentials = False
     try:
         # Parse no-MFA config
@@ -24,6 +27,9 @@ def init_sts_session_and_save_in_credentials(profile_name, credentials_file = aw
                 return False
             else:
                 save_no_mfa_credentials = True
+        # If an MFA serial was provided as an argument, discard whatever we found in config file
+        if mfa_serial_arg:
+            mfa_serial = mfa_serial_arg
         session_access_key, session_secret_key, session_token = init_sts_session(key_id, secret, mfa_serial, mfa_code)
         if save_no_mfa_credentials:
             # Write long-lived credentials to the no-MFA config file
@@ -42,6 +48,11 @@ def init_sts_session_and_save_in_credentials(profile_name, credentials_file = aw
 ##### STS-related arguments
 ########################################
 
+parser.add_argument('--mfa_serial',
+                    dest='mfa_serial',
+                    default=[ None ],
+                    nargs='+',
+                    help='MFA device\'s serial number')
 parser.add_argument('--mfa_code',
                     dest='mfa_code',
                     default=[''],
