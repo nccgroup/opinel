@@ -323,16 +323,19 @@ def show_profiles_from_aws_credentials_file():
 #
 # Write credentials to AWS config file
 #
-def write_creds_to_aws_credentials_file(profile_name, key_id = None, secret = None, session_token = None, mfa_serial = None, credentials_file = aws_credentials_file):
+def write_creds_to_aws_credentials_file(profile_name, key_id = None, secret = None, session_token = None, mfa_serial = None, credentials_file = aws_credentials_file, use_no_mfa_file = True):
     re_profile = re.compile(r'\[%s\]' % profile_name)
     profile_found = False
     profile_ever_found = False
     session_token_written = False
     mfa_serial_written = False
     if not os.path.isfile(credentials_file):
-        if os.path.isfile(aws_credentials_file_no_mfa):
+        if use_no_mfa_file and os.path.isfile(aws_credentials_file_no_mfa):
             # copy credentials.no-mfa if target file does not exist
             shutil.copyfile(aws_credentials_file_no_mfa, credentials_file)
+        elif not use_no_mfa_file:
+            # Copy credentials if target file does not exist
+            shutil.copyfile(aws_credentials_file, credentials_file)
         else:
             # Create an empty file if credentials.no-mfa does not exist
             open(credentials_file, 'a').close()
