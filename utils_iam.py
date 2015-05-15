@@ -158,25 +158,15 @@ def display_qr_code(png):
             pass
 
 #
-# Fetch the IAM user name associated with the access key in use
+# Fetch the IAM user name associated with the access key in use and return the requested property
 #
-def fetch_current_user_name(iam_connection, aws_key_id):
-    user_name = None
+def fetch_from_current_user(iam_connection, aws_key_id, property_name):
     try:
         # Fetch all users
-        users = handle_truncated_responses(iam_connection.get_all_users, None, ['list_users_response', 'list_users_result'], 'users')
-        for user in users:
-            keys = handle_truncated_responses(iam_connection.get_all_access_keys, user['user_name'], ['list_access_keys_response', 'list_access_keys_result'], 'access_key_metadata')
-            for key in keys:
-                if key['access_key_id'] == aws_key_id:
-                    user_name = user['user_name']
-                    break
-            if user_name:
-                break
-        print 'Active user name is %s' % user_name
+        user = iam_connection.get_user()['get_user_response']['get_user_result']['user']
+        return user[property_name]
     except Exception, e:
         printException(e)
-    return user_name
 
 #
 # Get all access keys for a given user
