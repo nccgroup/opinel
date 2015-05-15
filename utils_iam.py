@@ -46,6 +46,7 @@ def create_default_groups(iam_connection, common_groups, category_groups, dry_ru
 # Create and activate an MFA virtual device
 #
 def enable_mfa(iam_connection, user):
+    mfa_serial = ''
     try:
         mfa_device = iam_connection.create_virtual_mfa_device('/', user)
         mfa_serial = mfa_device['create_virtual_mfa_device_response']['create_virtual_mfa_device_result']['virtual_mfa_device']['serial_number']
@@ -63,6 +64,7 @@ def enable_mfa(iam_connection, user):
         print 'Succesfully enabled MFA for for \'%s\'. The device\'s ARN is \'%s\'.' % (user, mfa_serial)
     except Exception, e:
         printException(e)
+    return mfa_serial
 
 #
 # Delete IAM user
