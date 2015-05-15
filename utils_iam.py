@@ -4,7 +4,10 @@
 from AWSUtils.utils import *
 
 # Import third-party packages
+import base64
 import boto
+import fabulous.utils
+import fabulous.image
 import fileinput
 import os
 import re
@@ -38,6 +41,28 @@ def create_default_groups(iam_connection, common_groups, category_groups, dry_ru
         except Exception, e:
             printException(e)
             pass
+
+#
+# Create and activate an MFA virtual device
+#
+def enable_mfa(iam_connection, user):
+    try:
+        mfa_device = iam_connection.create_virtual_mfa_device('/', user)
+        mfa_serial = mfa_device['create_virtual_mfa_device_response']['create_virtual_mfa_device_result']['virtual_mfa_device']['serial_number']
+        mfa_png = mfa_device['create_virtual_mfa_device_response']['create_virtual_mfa_device_result']['virtual_mfa_device']['qr_code_png']
+        display_qr_code(mfa_png)
+        while True:
+            mfa_code1 = prompt_4_mfa_code()
+            mfa_code2 = prompt_4_mfa_code(activate = True)
+            try:
+                iam_connection.enable_mfa_device(user, mfa_serial, mfa_code1, mfa_code2)
+                break
+            except Exception, e:
+                printException(e)
+                pass
+        print 'Succesfully enabled MFA for for \'%s\'. The device\'s ARN is \'%s\'.' % (user, mfa_serial)
+    except Exception, e:
+        printException(e)
 
 #
 # Delete IAM user
@@ -110,6 +135,24 @@ def delete_user(iam_connection, user, stage = 6, serial = None):
         except Exception, e:
             printException(e)
             print 'Failed to delete user.'
+            pass
+
+#
+# Display MFA QR code
+#
+def display_qr_code(png):
+    qrcode_file = 'qrcode_tmp.png'
+    try:
+        with open(qrcode_file, 'w') as f:
+            f.write(base64.b64decode(png))
+        fabulous.utils.term.bgcolor = 'white'
+        print fabulous.image.Image(qrcode_file, 100)
+    except Exception, e:
+        print exception
+    finally:
+        try:
+            os.remove(qrcode_file)
+        except:
             pass
 
 #

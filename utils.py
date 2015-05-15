@@ -401,9 +401,13 @@ def complete_profile(f, session_token, session_token_written, mfa_serial, mfa_se
 #
 # Prompt for MFA code
 #
-def prompt_4_mfa_code():
+def prompt_4_mfa_code(activate = False):
     while True:
-        mfa_code = prompt_4_value('Enter your MFA code: ', no_confirm = True)
+        if activate:
+            prompt_string = 'Enter the next value: '
+        else:
+            prompt_string = 'Enter your MFA code: '
+        mfa_code = prompt_4_value(prompt_string, no_confirm = True)
         try:
             int(mfa_code)
             mfa_code[5]
@@ -417,8 +421,8 @@ def prompt_4_mfa_code():
 #
 def prompt_4_mfa_serial():
     while True:
-        mfa_serial = prompt_4_value('Enter your MFA serial: ')
-        if re_mfa_serial_format.match(mfa_serial):
+        mfa_serial = prompt_4_value('Enter your MFA serial: ', required = False)
+        if mfa_serial == '' or re_mfa_serial_format.match(mfa_serial):
             break
         else:
             print 'Error, your MFA serial must be of the form %s' % mfa_serial_format
@@ -427,7 +431,7 @@ def prompt_4_mfa_serial():
 #
 # Prompt for a value
 #
-def prompt_4_value(question, choices = None, default = None, display_choices = True, display_indices = False, authorize_list = False, is_question = False, no_confirm = False):
+def prompt_4_value(question, choices = None, default = None, display_choices = True, display_indices = False, authorize_list = False, is_question = False, no_confirm = False, required = True):
     if choices and len(choices) == 1 and choices[0] == 'yes_no':
         return prompt_4_yes_no(question)
     if choices and display_choices and not display_indices:
@@ -459,7 +463,7 @@ def prompt_4_value(question, choices = None, default = None, display_choices = T
         elif not choice and default:
             if prompt_4_yes_no('Use the default value (' + default + ')'):
                 return default
-        elif not choice:
+        elif not choice and required:
             print 'You cannot leave this parameter empty.'
         elif no_confirm or prompt_4_yes_no('You entered "' + choice + '". Is that correct'):
             return choice
