@@ -445,7 +445,7 @@ def prompt_4_value(question, choices = None, default = None, display_choices = T
 	sys.stdout.write(question)
         choice = raw_input()
         if choices:
-            user_choices = choice.split(',')
+            user_choices = [item.strip() for item in choice.split(',')]
             if not authorize_list and len(user_choices) > 1:
                 print 'Multiple values are not supported; please enter a single value.'
             else:
