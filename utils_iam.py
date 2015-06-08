@@ -4,14 +4,26 @@
 from AWSUtils.utils import *
 
 # Import third-party packages
-import base64
 import boto
-import fabulous.utils
-import fabulous.image
+_fabulous_available = True
+try:
+    import fabulous.utils
+    import fabulous.image
+    # fabulous does not import its PIL dependency on import time, so
+    # force it to check them now so we know whether it's really usable
+    # or not.  If it can't import PIL it raises ImportError.
+    fabulous.utils.pil_check()
+except ImportError:
+    _fabulous_available = False
+
+# Import stock packages
+import base64
 import fileinput
 import os
 import re
 import shutil
+import tempfile
+import webbrowser
 
 
 ########################################
@@ -47,11 +59,14 @@ def create_default_groups(iam_connection, common_groups, category_groups, dry_ru
 #
 def enable_mfa(iam_connection, user):
     mfa_serial = ''
+    qrcode_file = None
     try:
         mfa_device = iam_connection.create_virtual_mfa_device('/', user)
-        mfa_serial = mfa_device['create_virtual_mfa_device_response']['create_virtual_mfa_device_result']['virtual_mfa_device']['serial_number']
-        mfa_png = mfa_device['create_virtual_mfa_device_response']['create_virtual_mfa_device_result']['virtual_mfa_device']['qr_code_png']
-        display_qr_code(mfa_png)
+        result = mfa_device['create_virtual_mfa_device_response']['create_virtual_mfa_device_result']['virtual_mfa_device']
+        mfa_serial = result['serial_number']
+        mfa_png = result['qr_code_png']
+        mfa_seed = result['base_32_string_seed']
+        qrcode_file = display_qr_code(mfa_png, mfa_seed)
         while True:
             mfa_code1 = prompt_4_mfa_code()
             mfa_code2 = prompt_4_mfa_code(activate = True)
@@ -64,6 +79,16 @@ def enable_mfa(iam_connection, user):
         print 'Succesfully enabled MFA for for \'%s\'. The device\'s ARN is \'%s\'.' % (user, mfa_serial)
     except Exception, e:
         printException(e)
+        # We shouldn't return normally because if we've gotten here
+        # the user has potentially not set up the MFA device
+        # correctly, so we don't want to e.g. write the .no-mfa
+        # credentials file or anything.
+        raise
+    finally:
+        if qrcode_file is not None:
+            # This is a tempfile.NamedTemporaryFile, so simply closing
+            # it will also unlink it.
+            qrcode_file.close()
     return mfa_serial
 
 #
@@ -142,20 +167,55 @@ def delete_user(iam_connection, user, stage = 6, serial = None):
 #
 # Display MFA QR code
 #
-def display_qr_code(png):
-    qrcode_file = 'qrcode_tmp.png'
-    try:
-        with open(qrcode_file, 'w') as f:
-            f.write(base64.b64decode(png))
+def display_qr_code(png, seed):
+    # This NamedTemporaryFile is deleted as soon as it is closed, so
+    # return it to caller, who must close it (or program termination
+    # could cause it to be cleaned up, that's fine too).
+    # If we don't keep the file around until after the user has synced
+    # his MFA, the file will possibly be already deleted by the time
+    # the operating system gets around to execing the browser, if
+    # we're using a browser.
+    qrcode_file = tempfile.NamedTemporaryFile(suffix='.png', delete=True)
+    qrcode_file.write(base64.b64decode(png))
+    qrcode_file.flush()
+    if _fabulous_available:
         fabulous.utils.term.bgcolor = 'white'
         print fabulous.image.Image(qrcode_file, 100)
-    except Exception, e:
-        print exception
-    finally:
+    else:
+        graphical_browsers = [webbrowser.BackgroundBrowser,
+                              webbrowser.Mozilla,
+                              webbrowser.Galeon,
+                              webbrowser.Chrome,
+                              webbrowser.Opera,
+                              webbrowser.Konqueror]
+        if sys.platform[:3] == 'win':
+            graphical_browsers.append(webbrowser.WindowsDefault)
+        elif sys.platform == 'darwin':
+            graphical_browsers.append(webbrowser.MacOSXOSAScript)
+
+        browser_type = None
         try:
-            os.remove(qrcode_file)
-        except:
+            browser_type = type(webbrowser.get())
+        except webbrowser.Error:
             pass
+
+        if browser_type in graphical_browsers:
+            print "Unable to print qr code directly to your terminal, trying a web browser."
+            webbrowser.open('file://' + qrcode_file.name)
+        else:
+            print "Unable to print qr code directly to your terminal, and no graphical web browser seems available."
+            print "But, the qr code file is temporarily available as this file:"
+            print "\n    %s\n" % qrcode_file.name
+            print "Alternately, if you feel like typing the seed manually into your MFA app:"
+            # this is a base32-encoded binary string (for case
+            # insensitivity) which is then dutifully base64-encoded by
+            # amazon before putting it on the wire.  so the actual
+            # secret is b32decode(b64decode(seed)), and what users
+            # will need to type in to their app is just
+            # b64decode(seed).  print that out so users can (if
+            # desperate) type in their MFA app.
+            print "\n    %s\n" % base64.b64decode(seed)
+    return qrcode_file
 
 #
 # Fetch the IAM user name associated with the access key in use and return the requested property
