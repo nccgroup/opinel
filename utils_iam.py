@@ -62,6 +62,21 @@ def add_user_to_category_group(iam_connection, current_groups, category_groups, 
                 add_user_to_group(iam_connection, group, user, user_info, dry_run)
 
 #
+# Add an IAM user to the common group(s) if he's not yet a member
+#
+def add_user_to_common_group(iam_connection, current_groups, common_groups, user, force_common_group, user_info = None, dry_run = False):
+    mandatory_memberships = list((Counter(current_groups) & Counter(common_groups)).elements())
+    for group in common_groups:
+        if group not in mandatory_memberships:
+            sys.stdout.write('User \'%s\' does not belong to the mandatory common group \'%s\'. ' % (user, group))
+            if force_common_group == True:
+                sys.stdout.write('Automatically adding...\n')
+                add_user_to_group(iam_connection, group, user, user_info, dry_run)
+            elif prompt_4_yes_no('Do you want to remediate this now'):
+                add_user_to_group(iam_connection, group, user, user_info, dry_run)
+            sys.stdout.flush()
+
+#
 # Connect to IAM
 #
 def connect_iam(key_id, secret, session_token):
