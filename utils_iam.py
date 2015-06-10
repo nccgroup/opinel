@@ -18,6 +18,7 @@ except ImportError:
 
 # Import stock packages
 import base64
+from collections import Counter
 import fileinput
 import os
 import re
@@ -29,6 +30,36 @@ import webbrowser
 ########################################
 ##### Helpers
 ########################################
+
+#
+# Add an IAM user to an IAM group and updates the user info if needed
+#
+def add_user_to_group(iam_connection, group, user, user_info = None, dry_run = False):
+    if not dry_run:
+        iam_connection.add_user_to_group(group, user)
+    if user_info != None:
+        user_info[user]['groups'].append(group)
+
+#
+# Add an IAM user to a category group if he doesn't belong to one already
+#
+def add_user_to_category_group(iam_connection, current_groups, category_groups, category_regex, user, user_info = None, dry_run = False):
+        category_memberships = list((Counter(current_groups) & Counter(category_groups)).elements())
+        if not len(category_memberships):
+            group = None
+            sys.stdout.write('User \'%s\' does not belong to any of the category group (%s). ' % (user, ', '.join(category_groups)))
+            sys.stdout.flush()
+            if len(category_regex):
+                group = get_category_group_from_user_name(user, category_groups, category_regex)
+                if not group:
+                    sys.stdout.write('Failed to determine the category group based on the user name.\n')
+                else:
+                    sys.stdout.write('Automatically adding...\n')
+                    add_user_to_group(iam_connection, group, user, user_info, dry_run)
+                sys.stdout.flush()
+            if not group and prompt_4_yes_no('Do you want to remediate this now'):
+                group = prompt_4_value('Which category group should \'%s\' belong to' % user, choices = category_groups, display_choices = True, display_indices = True, is_question = True)
+                add_user_to_group(iam_connection, group, user, user_info, dry_run)
 
 #
 # Connect to IAM
@@ -236,6 +267,15 @@ def get_all_access_keys(iam_connection, user_name):
     return access_keys.list_access_keys_response.list_access_keys_result.access_key_metadata
 
 #
+# Get category group name based on IAM user name
+#
+def get_category_group_from_user_name(user, category_groups, category_regex):
+    for i, regex in enumerate(category_regex):
+        if regex != None and regex.match(user):
+            return category_groups[i]
+    return None
+
+#
 # Handle truncated responses
 #
 def handle_truncated_responses(callback, callback_args, result_path, items_name):
@@ -253,6 +293,23 @@ def handle_truncated_responses(callback, callback_args, result_path, items_name)
         if marker_value is None:
             break
     return items
+
+#
+# Initialize and compile regular expression for category groups
+#
+def init_iam_group_category_regex(category_groups, arg_category_regex):
+    # Must have as many regex as groups
+    if len(arg_category_regex) and len(category_groups) != len(arg_category_regex):
+        print 'Error: you must provide as many regex as category groups.'
+        return None
+    else:
+        category_regex = []
+        for regex in arg_category_regex:
+            if regex != '':
+                category_regex.append(re.compile(regex))
+            else:
+                category_regex.append(None)
+        return category_regex
 
 #
 # List an IAM user's access keys
