@@ -442,7 +442,7 @@ def prompt_4_value(question, choices = None, default = None, display_choices = T
                 print '%3d. %s' % (choices.index(c), c)
         if is_question:
             question = question + '? '
-	sys.stdout.write(question)
+	sys.stderr.write(question)
         choice = raw_input()
         if choices:
             user_choices = [item.strip() for item in choice.split(',')]
@@ -473,7 +473,7 @@ def prompt_4_value(question, choices = None, default = None, display_choices = T
 #
 def prompt_4_yes_no(question):
     while True:
-        sys.stdout.write(question + ' (y/n)? ')
+        sys.stderr.write(question + ' (y/n)? ')
         choice = raw_input().lower()
         if choice == 'yes' or choice == 'y':
             return True
