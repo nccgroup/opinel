@@ -439,7 +439,7 @@ def prompt_4_value(question, choices = None, default = None, display_choices = T
     while True:
         if choices and display_indices:
             for c in choices:
-                print '%3d. %s' % (choices.index(c), c)
+                sys.stderr.write('%3d. %s' % (choices.index(c), c))
         if is_question:
             question = question + '? '
 	sys.stderr.write(question)
@@ -447,7 +447,7 @@ def prompt_4_value(question, choices = None, default = None, display_choices = T
         if choices:
             user_choices = [item.strip() for item in choice.split(',')]
             if not authorize_list and len(user_choices) > 1:
-                print 'Multiple values are not supported; please enter a single value.'
+                sys.stderr.write('Multiple values are not supported; please enter a single value.')
             else:
                 choice_valid = True
                 if display_indices and int(choice) < len(choices):
@@ -455,7 +455,7 @@ def prompt_4_value(question, choices = None, default = None, display_choices = T
                 else:
                     for c in user_choices:
                         if not c in choices:
-                            print 'Invalid value (%s).' % c
+                            sys.stderr.write('Invalid value (%s).' % c)
                             choice_valid = False
                             break
                 if choice_valid:
@@ -464,7 +464,7 @@ def prompt_4_value(question, choices = None, default = None, display_choices = T
             if prompt_4_yes_no('Use the default value (' + default + ')'):
                 return default
         elif not choice and required:
-            print 'You cannot leave this parameter empty.'
+            sys.stderr.write('You cannot leave this parameter empty.')
         elif no_confirm or prompt_4_yes_no('You entered "' + choice + '". Is that correct'):
             return choice
 
@@ -480,4 +480,4 @@ def prompt_4_yes_no(question):
         elif choice == 'no' or choice == 'n':
             return False
         else:
-            print '\'%s\' is not a valid answer. Enter \'yes\'(y) or \'no\'(n).' % choice
+            sys.stderr.write('\'%s\' is not a valid answer. Enter \'yes\'(y) or \'no\'(n).' % choice)
