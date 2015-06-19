@@ -6,7 +6,6 @@ from AWSUtils.utils import *
 # Import third-party packages
 import boto
 from boto import cloudtrail
-from collections import Counter
 
 
 ########################################

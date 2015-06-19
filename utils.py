@@ -4,6 +4,7 @@
 import argparse
 import boto
 from boto import utils
+from collections import Counter
 import copy
 from distutils import dir_util
 import json
