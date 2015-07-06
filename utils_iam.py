@@ -5,6 +5,7 @@ from AWSUtils.utils import *
 
 # Import third-party packages
 import boto
+import boto3
 _fabulous_available = True
 try:
     import fabulous.utils
@@ -81,7 +82,8 @@ def add_user_to_common_group(iam_connection, current_groups, common_groups, user
 #
 def connect_iam(key_id, secret, session_token):
     try:
-        return boto.connect_iam(aws_access_key_id = key_id, aws_secret_access_key = secret, security_token = session_token)
+        aws_session = boto3.session.Session(key_id, secret, session_token)
+        return aws_session.resource('iam').meta.client
     except Exception, e:
         printException(e)
         return None
@@ -266,10 +268,10 @@ def display_qr_code(png, seed):
 #
 # Fetch the IAM user name associated with the access key in use and return the requested property
 #
-def fetch_from_current_user(iam_connection, aws_key_id, property_name):
+def fetch_from_current_user(iam_client, aws_key_id, property_name):
     try:
         # Fetch all users
-        user = iam_connection.get_user()['get_user_response']['get_user_result']['user']
+        user = iam_client.get_user()['User']
         return user[property_name]
     except Exception, e:
         printException(e)
@@ -293,17 +295,14 @@ def get_category_group_from_user_name(user, category_groups, category_regex):
 #
 # Handle truncated responses
 #
-def handle_truncated_responses(callback, callback_args, result_path, items_name):
+def handle_truncated_responses(callback, callback_args, items_name):
     marker_value = None
     items = []
     while True:
-        if callback_args:
-            result = callback(callback_args, marker = marker_value)
-        else:
-            result = callback(marker = marker_value)
-        for key in result_path:
-            result = result[key]
-        marker_value = result['marker'] if result['is_truncated'] != 'false' else None
+        if marker_value != None:
+            callback_args['Marker'] = marker_value
+        result = callback(**callback_args)
+        marker_value = result['Marker'] if bool(result['IsTruncated']) == True else None
         items = items + result[items_name]
         if marker_value is None:
             break
@@ -329,8 +328,8 @@ def init_iam_group_category_regex(category_groups, arg_category_regex):
 #
 # List an IAM user's access keys
 #
-def list_access_keys(iam_connection, user_name):
-    keys = handle_truncated_responses(iam_connection.get_all_access_keys, user_name, ['list_access_keys_response', 'list_access_keys_result'], 'access_key_metadata')
+def list_access_keys(iam_client, user_name):
+    keys = handle_truncated_responses(iam_client.list_access_keys, {'UserName':user_name, 'MaxItems': 1}, 'AccessKeyMetadata')
     print 'User \'%s\' currently has %s access keys:' % (user_name, len(keys))
     for key in keys:
-        print '\t%s (%s)' % (key['access_key_id'], key['status'])
+        print '\t%s (%s)' % (key['AccessKeyId'], key['Status'])

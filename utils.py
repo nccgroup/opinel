@@ -3,8 +3,8 @@
 # Import third-party packages
 import argparse
 import boto
+import boto3
 from boto import utils
-from collections import Counter
 import copy
 from distutils import dir_util
 import json
@@ -167,9 +167,9 @@ def init_sts_session(key_id, secret, mfa_serial = None, mfa_code = None):
         # Prompt for MFA code
         mfa_code = prompt_4_mfa_code()
     # Fetch session token and set the duration to 8 hours
-    sts_connection = boto.connect_sts(key_id, secret)
-    sts_response = sts_connection.get_session_token(mfa_serial_number = mfa_serial, mfa_token = mfa_code, duration = 28800)
-    return sts_response.access_key, sts_response.secret_key, sts_response.session_token
+    sts_client = boto3.session.Session(key_id, secret).client('sts')
+    sts_response = sts_client.get_session_token(SerialNumber = mfa_serial, TokenCode = mfa_code, DurationSeconds = 28800)
+    return sts_response['Credentials']['AccessKeyId'], sts_response['Credentials']['SecretAccessKey'], sts_response['Credentials']['SessionToken']
 
 #
 # Read credentials from anywhere

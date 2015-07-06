@@ -3,9 +3,6 @@
 # Import AWS utils
 from AWSUtils.utils_iam import *
 
-# Import third-party packages
-import boto
-
 
 ########################################
 ##### Helpers
