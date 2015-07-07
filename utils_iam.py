@@ -29,6 +29,22 @@ import webbrowser
 
 
 ########################################
+##### IAM-related arguments
+########################################
+
+#
+# Add an IAM-related argument to a recipe 
+#
+def add_iam_argument(parser, argument_name):
+    if argument_name == 'user_name':
+        parser.add_argument('--user_name',
+                            dest='user_name',
+                            default=[ None ],
+                            nargs='+',
+                            help='Your AWS IAM user name. If not provided, this script will find it automatically if you have iam:getUser privileges.')
+
+
+########################################
 ##### Helpers
 ########################################
 
@@ -105,21 +121,21 @@ def create_default_groups(iam_connection, common_groups, category_groups, dry_ru
 #
 # Create and activate an MFA virtual device
 #
-def enable_mfa(iam_connection, user):
+def enable_mfa(iam_client, user):
     mfa_serial = ''
     qrcode_file = None
     try:
-        mfa_device = iam_connection.create_virtual_mfa_device('/', user)
-        result = mfa_device['create_virtual_mfa_device_response']['create_virtual_mfa_device_result']['virtual_mfa_device']
-        mfa_serial = result['serial_number']
-        mfa_png = result['qr_code_png']
-        mfa_seed = result['base_32_string_seed']
+        print 'Enabling MFA for user \'%s\'...' % user
+        mfa_device = iam_client.create_virtual_mfa_device(VirtualMFADeviceName = user)['VirtualMFADevice']
+        mfa_serial = mfa_device['SerialNumber']
+        mfa_png = mfa_device['QRCodePNG']
+        mfa_seed = mfa_device['Base32StringSeed']
         qrcode_file = display_qr_code(mfa_png, mfa_seed)
         while True:
             mfa_code1 = prompt_4_mfa_code()
             mfa_code2 = prompt_4_mfa_code(activate = True)
             try:
-                iam_connection.enable_mfa_device(user, mfa_serial, mfa_code1, mfa_code2)
+                iam_client.enable_mfa_device(UserName = user, SerialNumber = mfa_serial, AuthenticationCode1= mfa_code1, AuthenticationCode2 = mfa_code2)
                 break
             except Exception, e:
                 printException(e)
@@ -223,12 +239,13 @@ def display_qr_code(png, seed):
     # his MFA, the file will possibly be already deleted by the time
     # the operating system gets around to execing the browser, if
     # we're using a browser.
-    qrcode_file = tempfile.NamedTemporaryFile(suffix='.png', delete=True)
-    qrcode_file.write(base64.b64decode(png))
+    qrcode_file = tempfile.NamedTemporaryFile(suffix='.png', delete=True, mode='wt')
+    qrcode_file.write(png)
     qrcode_file.flush()
     if _fabulous_available:
         fabulous.utils.term.bgcolor = 'white'
-        print fabulous.image.Image(qrcode_file, 100)
+        with open(qrcode_file.name, 'rb') as png_file:
+            print fabulous.image.Image(png_file, 100)
     else:
         graphical_browsers = [webbrowser.BackgroundBrowser,
                               webbrowser.Mozilla,
