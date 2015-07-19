@@ -6,6 +6,7 @@ import boto
 import boto3
 from boto import utils
 import copy
+from collections import Counter
 from distutils import dir_util
 import json
 import fileinput
@@ -67,13 +68,38 @@ parser.add_argument('--profile',
 def printException(e):
     global verbose_exceptions
     if verbose_exceptions:
-        print traceback.format_exc()
+        printError(str(traceback.format_exc()))
     else:
-        print e
+        printError(str(e))
 
 def configPrintException(enable):
     global verbose_exceptions
     verbose_exceptions = enable
+
+
+########################################
+##### Output functions
+########################################
+
+def printError(msg, newLine = True):
+    printGeneric(sys.stderr, msg, newLine)
+#    sys.stderr.write(msg)
+#    if newLine == True:
+#        sys.stderr.write('\n')
+#    sys.stderr.flush()
+
+def printInfo(msg, newLine = True ):
+    printGeneric(sys.stdout, msg, newLine)
+#    sys.stdout.write(msg)
+#    if newLine == True:
+#        sys.stdout.write('\n')
+#    sys.stdout.flush()
+
+def printGeneric(out, msg, newLine = True):
+    out.write(msg)
+    if newLine == True:
+        out.write('\n')
+    out.flush()
 
 
 ########################################
@@ -83,22 +109,22 @@ def configPrintException(enable):
 #
 # Build the list of target region names
 #
-def build_region_list(boto_regions, chosen_regions = [], include_gov = False, include_cn = False):
-    boto_region_names = []
-    for region in boto_regions:
-        if (not re_gov_region.match(region.name) or include_gov) and (not re_cn_region.match(region.name) or include_cn):
-            boto_region_names.append(region.name)
+def build_region_list(service_regions, chosen_regions = [], include_gov = False, include_cn = False):
+    enabled_regions = []
+    for region in service_regions:
+        if (not re_gov_region.match(region) or include_gov) and (not re_cn_region.match(region) or include_cn):
+            enabled_regions.append(region)
     if len(chosen_regions):
-        return list((Counter(boto_region_names) & Counter(chosen_regions)).elements())
+        return list((Counter(enabled_regions) & Counter(chosen_regions)).elements())
     else:
-        return boto_region_names
+        return enabled_regions
 
 def check_boto_version():
-    print 'Checking the version of boto...'
+    printInfo('Checking the version of boto...')
     min_boto_version = '2.31.1'
     latest_boto_version = 0
     if boto.Version < min_boto_version:
-        print 'Error: the version of boto installed on this system (%s) is too old. Boto version %s or newer is required.' % (boto.Version, min_boto_version)
+        printError('Error: the version of boto installed on this system (%s) is too old. Boto version %s or newer is required.' % (boto.Version, min_boto_version))
         return False
     else:
         try:
@@ -109,9 +135,9 @@ def check_boto_version():
                 if release_tag_regex.match(tag['name']) and tag['name'] > latest_boto_version:
                     latest_boto_version = tag['name']
             if boto.Version < latest_boto_version:
-                print 'Warning: the version of boto installed (%s) is not the latest available (%s). Consider upgrading to ensure that all features are enabled.' % (boto.Version, latest_boto_version)
+                printError('Warning: the version of boto installed (%s) is not the latest available (%s). Consider upgrading to ensure that all features are enabled.' % (boto.Version, latest_boto_version))
         except Exception, e:
-            print 'Warning: connection to the Github API failed.'
+            printError('Warning: connection to the Github API failed.')
             printException(e)
     return True
 
@@ -195,6 +221,10 @@ def read_creds(profile_name, csv_file = None, mfa_serial_arg = None, mfa_code = 
     # If we have an MFA serial number or MFA code and no token yet, initiate an STS session
     if (mfa_serial or mfa_code) and not token:
         key_id, secret, token = init_sts_session(key_id, secret, mfa_serial, mfa_code)
+    # If we don't have valid creds by now, throw an exception
+    if key_id == None or secret == None:
+        printError('Error: could not find AWS credentials. Use the --help option for more information.\n')
+        raise Exception
     return key_id, secret, token
 
 #
@@ -243,7 +273,7 @@ def read_creds_from_csv(filename):
                         username, key_id, secret, mfa_serial = line.split(',')
                         mfa_serial = mfa_serial.rstrip()
                     except:
-                        print 'Error, the CSV file is not properly formatted'
+                        printError('Error, the CSV file is not properly formatted')
     return key_id.rstrip(), secret.rstrip(), mfa_serial
 
 #
@@ -253,13 +283,16 @@ def read_creds_from_ec2_instance_metadata():
     key_id = None
     secret = None
     token = None
-    metadata = boto.utils.get_instance_metadata(timeout=1, num_retries=1)
-    if metadata:
-        for role in metadata['iam']['security-credentials']:
-            key_id = metadata['iam']['security-credentials'][role]['AccessKeyId']
-            secret = metadata['iam']['security-credentials'][role]['SecretAccessKey']
-            token = metadata['iam']['security-credentials'][role]['Token']
-    return key_id, secret, token
+    try:
+        metadata = boto.utils.get_instance_metadata(timeout=1, num_retries=1)
+        if metadata:
+            for role in metadata['iam']['security-credentials']:
+                key_id = metadata['iam']['security-credentials'][role]['AccessKeyId']
+                secret = metadata['iam']['security-credentials'][role]['SecretAccessKey']
+                token = metadata['iam']['security-credentials'][role]['Token']
+        return key_id, secret, token
+    except Exception, e:
+        pass
 
 #
 # Read credentials from environment variables
@@ -319,7 +352,7 @@ def show_profiles_from_aws_credentials_file():
                     if groups:
                         profiles.append(groups.groups()[0])
     for profile in set(profiles):
-        print ' * %s' % profile
+        printInfo(' * %s' % profile)
 
 #
 # Write credentials to AWS config file
@@ -407,14 +440,16 @@ def prompt_4_mfa_code(activate = False):
         if activate:
             prompt_string = 'Enter the next value: '
         else:
-            prompt_string = 'Enter your MFA code: '
+            prompt_string = 'Enter your MFA code (or \'q\' to abort): '
         mfa_code = prompt_4_value(prompt_string, no_confirm = True)
         try:
+            if mfa_code == 'q':
+                return mfa_code
             int(mfa_code)
             mfa_code[5]
             break
         except:
-            print 'Error, your MFA code must only consist of digits and be at least 6 characters long'
+            printError('Error, your MFA code must only consist of digits and be at least 6 characters long.')
     return mfa_code
 
 #
@@ -426,7 +461,7 @@ def prompt_4_mfa_serial():
         if mfa_serial == '' or re_mfa_serial_format.match(mfa_serial):
             break
         else:
-            print 'Error, your MFA serial must be of the form %s' % mfa_serial_format
+            printError('Error, your MFA serial must be of the form %s' % mfa_serial_format)
     return mfa_serial
 
 #
@@ -440,15 +475,15 @@ def prompt_4_value(question, choices = None, default = None, display_choices = T
     while True:
         if choices and display_indices:
             for c in choices:
-                sys.stderr.write('%3d. %s' % (choices.index(c), c))
+                printError('%3d. %s\n' % (choices.index(c), c))
         if is_question:
             question = question + '? '
-	sys.stderr.write(question)
+	printError(question)
         choice = raw_input()
         if choices:
             user_choices = [item.strip() for item in choice.split(',')]
             if not authorize_list and len(user_choices) > 1:
-                sys.stderr.write('Multiple values are not supported; please enter a single value.')
+                printError('Multiple values are not supported; please enter a single value.')
             else:
                 choice_valid = True
                 if display_indices and int(choice) < len(choices):
@@ -456,7 +491,7 @@ def prompt_4_value(question, choices = None, default = None, display_choices = T
                 else:
                     for c in user_choices:
                         if not c in choices:
-                            sys.stderr.write('Invalid value (%s).' % c)
+                            printError('Invalid value (%s).' % c)
                             choice_valid = False
                             break
                 if choice_valid:
@@ -465,7 +500,7 @@ def prompt_4_value(question, choices = None, default = None, display_choices = T
             if prompt_4_yes_no('Use the default value (' + default + ')'):
                 return default
         elif not choice and required:
-            sys.stderr.write('You cannot leave this parameter empty.')
+            printError('You cannot leave this parameter empty.')
         elif no_confirm or prompt_4_yes_no('You entered "' + choice + '". Is that correct'):
             return choice
 
@@ -474,11 +509,11 @@ def prompt_4_value(question, choices = None, default = None, display_choices = T
 #
 def prompt_4_yes_no(question):
     while True:
-        sys.stderr.write(question + ' (y/n)? ')
+        printError(question + ' (y/n)? ')
         choice = raw_input().lower()
         if choice == 'yes' or choice == 'y':
             return True
         elif choice == 'no' or choice == 'n':
             return False
         else:
-            sys.stderr.write('\'%s\' is not a valid answer. Enter \'yes\'(y) or \'no\'(n).' % choice)
+            printError('\'%s\' is not a valid answer. Enter \'yes\'(y) or \'no\'(n).' % choice)

@@ -33,7 +33,7 @@ import webbrowser
 ########################################
 
 #
-# Add an IAM-related argument to a recipe 
+# Add an IAM-related argument to a recipe
 #
 def add_iam_argument(parser, argument_name):
     if argument_name == 'user_name':
@@ -51,16 +51,16 @@ def add_iam_argument(parser, argument_name):
 #
 # Add an IAM user to an IAM group and updates the user info if needed
 #
-def add_user_to_group(iam_connection, group, user, user_info = None, dry_run = False):
+def add_user_to_group(iam_client, group, user, user_info = None, dry_run = False):
     if not dry_run:
-        iam_connection.add_user_to_group(group, user)
+        iam_client.add_user_to_group(GroupName = group, UserName = user)
     if user_info != None:
         user_info[user]['groups'].append(group)
 
 #
 # Add an IAM user to a category group if he doesn't belong to one already
 #
-def add_user_to_category_group(iam_connection, current_groups, category_groups, category_regex, user, user_info = None, dry_run = False):
+def add_user_to_category_group(iam_client, current_groups, category_groups, category_regex, user, user_info = None, dry_run = False):
         category_memberships = list((Counter(current_groups) & Counter(category_groups)).elements())
         if not len(category_memberships):
             group = None
@@ -70,27 +70,29 @@ def add_user_to_category_group(iam_connection, current_groups, category_groups, 
                 group = get_category_group_from_user_name(user, category_groups, category_regex)
                 if not group:
                     sys.stdout.write('Failed to determine the category group based on the user name.\n')
+                    sys.stdout.flush()
                 else:
                     sys.stdout.write('Automatically adding...\n')
-                    add_user_to_group(iam_connection, group, user, user_info, dry_run)
+                    add_user_to_group(iam_client, group, user, user_info, dry_run)
                 sys.stdout.flush()
             if not group and prompt_4_yes_no('Do you want to remediate this now'):
                 group = prompt_4_value('Which category group should \'%s\' belong to' % user, choices = category_groups, display_choices = True, display_indices = True, is_question = True)
-                add_user_to_group(iam_connection, group, user, user_info, dry_run)
+                add_user_to_group(iam_client, group, user, user_info, dry_run)
 
 #
 # Add an IAM user to the common group(s) if he's not yet a member
 #
-def add_user_to_common_group(iam_connection, current_groups, common_groups, user, force_common_group, user_info = None, dry_run = False):
+def add_user_to_common_group(iam_client, current_groups, common_groups, user, force_common_group, user_info = None, dry_run = False):
     mandatory_memberships = list((Counter(current_groups) & Counter(common_groups)).elements())
     for group in common_groups:
         if group not in mandatory_memberships:
             sys.stdout.write('User \'%s\' does not belong to the mandatory common group \'%s\'. ' % (user, group))
+            sys.stdout.flush()
             if force_common_group == True:
                 sys.stdout.write('Automatically adding...\n')
-                add_user_to_group(iam_connection, group, user, user_info, dry_run)
+                add_user_to_group(iam_client, group, user, user_info, dry_run)
             elif prompt_4_yes_no('Do you want to remediate this now'):
-                add_user_to_group(iam_connection, group, user, user_info, dry_run)
+                add_user_to_group(iam_client, group, user, user_info, dry_run)
             sys.stdout.flush()
 
 #
@@ -98,22 +100,25 @@ def add_user_to_common_group(iam_connection, current_groups, common_groups, user
 #
 def connect_iam(key_id, secret, session_token):
     try:
+        sys.stdout.write('Connecting to AWS IAM...\n')
+        sys.stdout.flush()
         aws_session = boto3.session.Session(key_id, secret, session_token)
         return aws_session.resource('iam').meta.client
     except Exception, e:
+        printError('Error: could not connect to IAM.')
         printException(e)
         return None
 
 #
 # Create default groups
 #
-def create_default_groups(iam_connection, common_groups, category_groups, dry_run):
+def create_default_groups(iam_client, common_groups, category_groups, dry_run):
     all_groups = common_groups + category_groups
     for group in all_groups:
         try:
             print 'Creating group \'%s\'...' % group
             if not dry_run:
-                iam_connection.create_group(group)
+                iam_client.create_group(GroupName = group)
         except Exception, e:
             printException(e)
             pass
@@ -121,26 +126,36 @@ def create_default_groups(iam_connection, common_groups, category_groups, dry_ru
 #
 # Create and activate an MFA virtual device
 #
-def enable_mfa(iam_client, user):
+def enable_mfa(iam_client, user, qrcode_file = None):
     mfa_serial = ''
-    qrcode_file = None
+    tmp_qrcode_file = None
     try:
         print 'Enabling MFA for user \'%s\'...' % user
         mfa_device = iam_client.create_virtual_mfa_device(VirtualMFADeviceName = user)['VirtualMFADevice']
         mfa_serial = mfa_device['SerialNumber']
         mfa_png = mfa_device['QRCodePNG']
         mfa_seed = mfa_device['Base32StringSeed']
-        qrcode_file = display_qr_code(mfa_png, mfa_seed)
+        tmp_qrcode_file = display_qr_code(mfa_png, mfa_seed)
+        if qrcode_file != None:
+            with open(qrcode_file, 'wt') as f:
+                f.write(mfa_png)
         while True:
             mfa_code1 = prompt_4_mfa_code()
             mfa_code2 = prompt_4_mfa_code(activate = True)
+            if mfa_code1 == 'q' or mfa_code2 == 'q':
+                try:
+                    delete_virtual_mfa_device(iam_client, mfa_serial)
+                except Exception, e:
+                    printException(e)
+                    pass
+                raise Exception
             try:
                 iam_client.enable_mfa_device(UserName = user, SerialNumber = mfa_serial, AuthenticationCode1= mfa_code1, AuthenticationCode2 = mfa_code2)
+                print 'Succesfully enabled MFA for for \'%s\'. The device\'s ARN is \'%s\'.' % (user, mfa_serial)
                 break
             except Exception, e:
                 printException(e)
                 pass
-        print 'Succesfully enabled MFA for for \'%s\'. The device\'s ARN is \'%s\'.' % (user, mfa_serial)
     except Exception, e:
         printException(e)
         # We shouldn't return normally because if we've gotten here
@@ -149,84 +164,99 @@ def enable_mfa(iam_client, user):
         # credentials file or anything.
         raise
     finally:
-        if qrcode_file is not None:
+        if tmp_qrcode_file is not None:
             # This is a tempfile.NamedTemporaryFile, so simply closing
             # it will also unlink it.
-            qrcode_file.close()
+            tmp_qrcode_file.close()
     return mfa_serial
 
 #
 # Delete IAM user
 #
-def delete_user(iam_connection, user, stage = 6, serial = None):
+def delete_user(iam_client, user, mfa_serial = None):
+    print 'Deleting user %s...' % user
     # Delete access keys
-    if stage >= 6:
-        try:
-            # Get all keys
-            aws_keys = get_all_access_keys(iam_connection, user)
-            for aws_key in aws_keys:
-                try:
-                    iam_connection.delete_access_key(aws_key['access_key_id'], user)
-                except Exception, e:
-                    printException(e)
-                    pass
-        except Exception, e:
-            printException(e)
-            print 'Failed to delete access keys.'
-            pass
-    # Fetch MFA serial if needed
-    if not serial and stage >= 4:
-        try:
-            mfa_devices = iam_connection.get_all_mfa_devices(user)
-            serial = mfa_devices.list_mfa_devices_response.list_mfa_devices_result.mfa_devices[0].serial_number
-        except Exception, e:
-            printException(e)
-            print 'Failed to fetch MFA device serial number for user %s' % user
-            pass
-    # Deactivate MFA device
-    if stage >= 5:
-        try:
-            iam_connection.deactivate_mfa_device(user, serial)
-        except Exception, e:
-            printException(e)
-            print 'Failed to deactivate MFA device.'
-            pass
-    # Delete MFA device
-    if stage >= 4:
-        try:
-            # Pending merge of https://github.com/boto/boto/pull/3010
-            print 'Boto does not support MFA device deletion yet. You\'ll need to run the following command:'
-            print 'aws --profile %s iam delete-virtual-mfa-device --serial-number %s' % ('XXX', serial)
-        except Exception, e:
-            printException(e)
-            pass
+    try:
+        aws_keys = get_all_access_keys(iam_client, user)
+        for aws_key in aws_keys:
+            try:
+                printInfo('Deleting access key ID %s...' % aws_key['AccessKeyId'])
+                iam_client.delete_access_key(AccessKeyId = aws_key['AccessKeyId'], UserName = user)
+            except Exception, e:
+                printException(e)
+                printError('Failed to delete access key %s' % aws_key['AccessKeyId'])
+                pass
+    except Exception, e:
+        printException(e)
+        printError('Failed to get access keys for user %s' % user)
+        pass
+    # Deactivate and delete MFA devices
+    try:
+        mfa_devices = iam_client.list_mfa_devices(UserName = user)['MFADevices']
+        for mfa_device in mfa_devices:
+            serial = mfa_device['SerialNumber']
+            try:
+                printInfo('Deactivating MFA device %s...' % serial)
+                iam_client.deactivate_mfa_device(SerialNumber = serial, UserName = user)
+            except Exception, e:
+                printException(e)
+                printError('Failed to deactivate MFA device %s' % serial)
+                pass
+            delete_virtual_mfa_device(iam_client, serial)
+        if mfa_serial:
+            delete_virtual_mfa_device(iam_client, mfa_serial)
+    except Exception, e:
+        printException(e)
+        print 'Failed to fetch MFA device serial number for user %s' % user
+        pass
     # Remove IAM user from groups
-    if stage >= 3:
-        try:
-            groups = iam_connection.get_groups_for_user(user)
-            groups = groups['list_groups_for_user_response']['list_groups_for_user_result']['groups']
-            for group in groups:
-                iam_connection.remove_user_from_group(group['group_name'], user)
-        except Exception, e:
-            printException(e)
-            print 'Failed to remove user from groups.'
-            pass
+    try:
+        groups = iam_client.list_groups_for_user(UserName = user)['Groups']
+        for group in groups:
+            try:
+                printInfo('Removing user %s from group %s...' % (user, group['GroupName']))
+                iam_client.remove_user_from_group(GroupName = group['GroupName'], UserName = user)
+            except Exception, e:
+                printException(e)
+                print 'Failed to remove user %s from group %s' % (user, group)
+    except Exception, e:
+        printException(e)
+        print 'Failed to fetch IAM groups for user %s' % user
+        pass
     # Delete login profile
-    if stage >= 2:
-        try:
-            iam_connection.delete_login_profile(user)
-        except Exception, e:
-            printException(e)
-            print 'Failed to delete login profile.'
-            pass
+    login_profile = []
+    try:
+        login_profile = iam_client.get_login_profile(UserName = user)['LoginProfile']
+    except Exception, e:
+        pass
+    try:
+        if len(login_profile):
+            printInfo('Deleting login profile for user %s...' % user)
+            iam_client.delete_login_profile(UserName = user)
+    except Exception, e:
+        printException(e)
+        print 'Failed to delete login profile.'
+        pass
     # Delete IAM user
-    if stage >= 1:
-        try:
-            iam_connection.delete_user(user)
-        except Exception, e:
-            printException(e)
-            print 'Failed to delete user.'
-            pass
+    try:
+        iam_client.delete_user(UserName = user)
+        printInfo('User %s deleted.' % user)
+    except Exception, e:
+        printException(e)
+        print 'Failed to delete user.'
+        pass
+
+#
+# Delete a vritual MFA device given its serial number
+#
+def delete_virtual_mfa_device(iam_client, mfa_serial):
+    try:
+        printInfo('Deleting MFA device %s...' % mfa_serial)
+        iam_client.delete_virtual_mfa_device(SerialNumber = mfa_serial)
+    except Exception, e:
+        printException(e)
+        printError('Failed to delete MFA device %s' % mfa_serial)
+        pass   
 
 #
 # Display MFA QR code
@@ -296,9 +326,8 @@ def fetch_from_current_user(iam_client, aws_key_id, property_name):
 #
 # Get all access keys for a given user
 #
-def get_all_access_keys(iam_connection, user_name):
-    access_keys = iam_connection.get_all_access_keys(user_name)
-    return access_keys.list_access_keys_response.list_access_keys_result.access_key_metadata
+def get_all_access_keys(iam_client, user_name):
+    return iam_client.list_access_keys(UserName = user_name)['AccessKeyMetadata']
 
 #
 # Get category group name based on IAM user name
