@@ -72,7 +72,7 @@ def assume_role_and_save_in_credentials(profile_name, role_arn, role_session_nam
     role_key_id, role_secret, role_session_token = assume_role(sts_client, role_arn, role_session_name, mfa_serial, mfa_code)
 
     # Save session credentials
-    role_profile = profile_name + '-' + role_session_name
+    role_profile = profile_name.replace('-nomfa', '') + '-' + role_session_name
     write_creds_to_aws_credentials_file(role_profile, key_id = role_key_id, secret = role_secret, session_token = role_session_token)
 
     printInfo('Your role credentials have been saved in the %s profile.' % role_profile)
@@ -92,7 +92,7 @@ def connect_sts(key_id, secret, session_token):
 #
 # Fetch STS credentials and store them in a file
 #
-def init_sts_session_and_save_in_credentials(profile_name, credentials_file = aws_credentials_file_no_mfa, mfa_code = None, mfa_serial_arg = None):
+def init_sts_session_and_save_in_credentials(profile_name, credentials_file = aws_credentials_file, mfa_code = None, mfa_serial_arg = None):
 
     # Init
     key_id = secret = mfa_serial = session_token = None
