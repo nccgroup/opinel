@@ -57,12 +57,24 @@ def add_common_argument(parser, argument_name):
                             default=False,
                             action='store_true',
                             help='Print the stack trace when exception occurs')
+    elif argument_name == 'dry':
+        parser.add_argument('--dry',
+                            dest='dry_run',
+                            default=False,
+                            action='store_true',
+                            help='Executes read-only actions (check status, get*, list*...)')
     elif argument_name == 'profile':
         parser.add_argument('--profile',
                             dest='profile',
                             default= [ 'default' ],
                             nargs='+',
                             help='Name of the profile')
+    elif argument_name == 'region':
+        parser.add_argument('--region',
+                            dest='region_name',
+                            default=[ ],
+                            nargs='+',
+                            help='Name of regions to run the tool in, defaults to all.')
 
 init_parser()
 add_common_argument(parser, 'debug')
@@ -117,16 +129,22 @@ def printGeneric(out, msg, newLine = True):
 #
 # Build the list of target region names
 #
-def build_region_list(service_regions, chosen_regions = [], include_gov = False, include_cn = False):
-    enabled_regions = []
-    for region in service_regions:
-        if (not re_gov_region.match(region) or include_gov) and (not re_cn_region.match(region) or include_cn):
-            enabled_regions.append(region)
+def build_region_list(service, chosen_regions = [], include_gov = False, include_cn = False):
+    boto_regions = []
+    # h4ck pending botocore issue 339
+    with open('AWSUtils/boto-endpoints.json', 'rt') as f:
+        boto_endpoints = json.load(f)
+        for region in boto_endpoints[service]:
+            if (not re_gov_region.match(region) or include_gov) and (not re_cn_region.match(region) or include_cn):
+                boto_regions.append(region)
     if len(chosen_regions):
-        return list((Counter(enabled_regions) & Counter(chosen_regions)).elements())
+        return list((Counter(boto_regions) & Counter(chosen_regions)).elements())
     else:
-        return enabled_regions
+        return boto_regions
 
+#
+# Check boto version
+#
 def check_boto_version():
     printInfo('Checking the version of boto...')
     min_boto_version = '2.31.1'
@@ -148,6 +166,24 @@ def check_boto_version():
             printError('Warning: connection to the Github API failed.')
             printException(e)
     return True
+
+#
+# Connect to any service
+#
+def connect_service(service, key_id, secret, session_token, region = None, silent = False):
+    try:
+        if region:
+            if not silent:
+                printInfo('Connecting to AWS %s in region %s...' % (service, region))
+            return boto3.client(service.lower(), aws_access_key_id = key_id, aws_secret_access_key = secret, aws_session_token = session_token, region_name = region)
+        else:
+            if not silent:
+                printInfo('Connecting to AWS %s...' % service)
+            return boto3.client(service.lower(), aws_access_key_id = key_id, aws_secret_access_key = secret, aws_session_token = session_token)
+    except Exception, e:
+        printError('Error: could not connect to %s.' % service)
+        printException(e)
+        return None
 
 def get_environment_name(args):
     environment_name = None
