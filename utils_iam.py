@@ -100,8 +100,7 @@ def add_user_to_common_group(iam_client, current_groups, common_groups, user, fo
 #
 def connect_iam(key_id, secret, session_token):
     try:
-        sys.stdout.write('Connecting to AWS IAM...\n')
-        sys.stdout.flush()
+        printInfo('Connecting to AWS IAM...')
         aws_session = boto3.session.Session(key_id, secret, session_token)
         return aws_session.resource('iam').meta.client
     except Exception, e:

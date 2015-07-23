@@ -35,7 +35,6 @@ re_gov_region = re.compile(r'(.*)?-gov-(.*)?')
 re_cn_region = re.compile(r'^cn-(.*)?')
 
 aws_credentials_file = os.path.join(os.path.join(os.path.expanduser('~'), '.aws'), 'credentials')
-aws_credentials_file_no_mfa = os.path.join(os.path.join(os.path.expanduser('~'), '.aws'), 'credentials.no-mfa')
 aws_credentials_file_tmp = os.path.join(os.path.join(os.path.expanduser('~'), '.aws'), 'credentials.tmp')
 
 
@@ -48,17 +47,26 @@ def init_parser():
         global parser
         parser = argparse.ArgumentParser()
 
+#
+# Add a common argument to a recipe
+#
+def add_common_argument(parser, argument_name):
+    if argument_name == 'debug':
+        parser.add_argument('--debug',
+                            dest='debug',
+                            default=False,
+                            action='store_true',
+                            help='Print the stack trace when exception occurs')
+    elif argument_name == 'profile':
+        parser.add_argument('--profile',
+                            dest='profile',
+                            default= [ 'default' ],
+                            nargs='+',
+                            help='Name of the profile')
+
 init_parser()
-parser.add_argument('--debug',
-                    dest='debug',
-                    default=False,
-                    action='store_true',
-                    help='Print the stack trace when exception occurs')
-parser.add_argument('--profile',
-                    dest='profile',
-                    default= [ 'default' ],
-                    nargs='+',
-                    help='Name of the profile')
+add_common_argument(parser, 'debug')
+add_common_argument(parser, 'profile')
 
 
 ########################################
@@ -338,11 +346,11 @@ def set_profile_default(saved_args, key, default):
     return saved_args[key] if key in saved_args else default
 
 #
-# Show profile names from ~/.aws/credentials and ~/.aws/credentials.no-mfa
+# Show profile names from ~/.aws/credentials
 #
 def show_profiles_from_aws_credentials_file():
     profiles = []
-    files = [ aws_credentials_file, aws_credentials_file_no_mfa ]
+    files = [ aws_credentials_file ]
     for filename in files:
         if os.path.isfile(filename):
             with open(filename) as f:
@@ -357,26 +365,19 @@ def show_profiles_from_aws_credentials_file():
 #
 # Write credentials to AWS config file
 #
-def write_creds_to_aws_credentials_file(profile_name, key_id = None, secret = None, session_token = None, mfa_serial = None, credentials_file = aws_credentials_file, use_no_mfa_file = True):
-    re_profile = re.compile(r'\[%s\]' % profile_name)
+def write_creds_to_aws_credentials_file(profile_name, key_id = None, secret = None, session_token = None, mfa_serial = None):
     profile_found = False
     profile_ever_found = False
     session_token_written = False
     mfa_serial_written = False
-    if not os.path.isfile(credentials_file):
-        if use_no_mfa_file and os.path.isfile(aws_credentials_file_no_mfa):
-            # copy credentials.no-mfa if target file does not exist
-            shutil.copyfile(aws_credentials_file_no_mfa, credentials_file)
-        elif not use_no_mfa_file:
-            # Copy credentials if target file does not exist
-            shutil.copyfile(aws_credentials_file, credentials_file)
-        else:
-            # Create an empty file if credentials.no-mfa does not exist
-            open(credentials_file, 'a').close()
+    # Create an empty file if target does not exist
+    if not os.path.isfile(aws_credentials_file):
+        open(aws_credentials_file, 'a').close()
     # Open and parse/edit file
-    for line in fileinput.input(credentials_file, inplace=True):
-        if re_profile_name.match(line):
-            if profile_name in line:
+    for line in fileinput.input(aws_credentials_file, inplace=True):
+        profile_line = re_profile_name.match(line)
+        if profile_line:
+            if profile_line.groups()[0] == profile_name:
                 profile_found = True
                 profile_ever_found = True
             else:
@@ -407,12 +408,12 @@ def write_creds_to_aws_credentials_file(profile_name, key_id = None, secret = No
 
     # Complete the profile if needed
     if profile_found:
-        with open(credentials_file, 'a') as f:
+        with open(aws_credentials_file, 'a') as f:
             complete_profile(f, session_token, session_token_written, mfa_serial, mfa_serial_written)
 
-    # Add new profile if only found in .no-mfa configuration file
+    # Add new profile if not found
     if not profile_ever_found:
-        with open(credentials_file, 'a') as f:
+        with open(aws_credentials_file, 'a') as f:
             f.write('[%s]\n' % profile_name)
             f.write('aws_access_key_id = %s\n' % key_id)
             f.write('aws_secret_access_key = %s\n' % secret)
