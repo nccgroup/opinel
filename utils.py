@@ -57,8 +57,8 @@ def add_common_argument(parser, default_args, argument_name):
                             default=False,
                             action='store_true',
                             help='Print the stack trace when exception occurs')
-    elif argument_name == 'dry':
-        parser.add_argument('--dry',
+    elif argument_name == 'dry-run':
+        parser.add_argument('--dry-run',
                             dest='dry_run',
                             default=False,
                             action='store_true',
@@ -71,10 +71,12 @@ def add_common_argument(parser, default_args, argument_name):
                             help='Name of the profile')
     elif argument_name == 'region':
         parser.add_argument('--region',
-                            dest='region_name',
+                            dest='region',
                             default=[ ],
                             nargs='+',
-                            help='Name of regions to run the tool in, defaults to all.')
+                            help='Name of regions to run the tool in, defaults to all')
+    else:
+        raise Exception('Invalid parameter name %s' % argument_name)
 
 init_parser()
 add_common_argument(parser, {}, 'debug')
@@ -262,9 +264,6 @@ def read_creds(profile_name, csv_file = None, mfa_serial_arg = None, mfa_code = 
     # If an MFA serial was provided as an argument, discard whatever we found in config file
     if mfa_serial_arg:
         mfa_serial = mfa_serial_arg
-    # If we have an MFA serial number or MFA code and no token yet, initiate an STS session
-    if (mfa_serial or mfa_code) and not token:
-        key_id, secret, token = init_sts_session(key_id, secret, mfa_serial, mfa_code)
     # If we don't have valid creds by now, throw an exception
     if key_id == None or secret == None:
         printError('Error: could not find AWS credentials. Use the --help option for more information.\n')
@@ -357,6 +356,7 @@ def read_creds_from_environment_variables():
 # Read default argument values for a recipe
 #
 def read_profile_default_args(recipe_name):
+    profile_name = 'default'
     # h4ck to have an early read of the profile name
     for i, arg in enumerate(sys.argv):
         if arg == '--profile' and len(sys.argv) >= i + 1:

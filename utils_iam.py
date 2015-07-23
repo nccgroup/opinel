@@ -36,24 +36,26 @@ import webbrowser
 # Add an IAM-related argument to a recipe
 #
 def add_iam_argument(parser, default_args, argument_name):
-    if argument_name == 'user_name':
-        parser.add_argument('--user_name',
+    if argument_name == 'user-name':
+        parser.add_argument('--user-name',
                             dest='user_name',
                             default=[ None ],
                             nargs='+',
-                            help='Your AWS IAM user name. If not provided, this script will find it automatically if you have iam:getUser privileges.')
-    elif argument_name == 'category_groups':
-        parser.add_argument('--category_groups',
+                            help='Your AWS IAM user name; if not provided, this script will find it automatically if you have iam:getUser privileges')
+    elif argument_name == 'category-groups':
+        parser.add_argument('--category-groups',
                             dest='category_groups',
                             default=set_profile_default(default_args, 'category_groups', []),
                             nargs='+',
-                            help='Choice of groups that all IAM users should belong to.')
-    elif argument_name == 'common_groups':
-        parser.add_argument('--common_groups',
+                            help='Choice of groups that all IAM users should belong to')
+    elif argument_name == 'common-groups':
+        parser.add_argument('--common-groups',
                             dest='common_groups',
                             default=set_profile_default(default_args, 'common_groups', []),
                             nargs='+',
-                            help='Groups that all IAM users should belong to.')
+                            help='Groups that all IAM users should belong to')
+    else:
+        raise Exception('Invalid parameter name: %s' % argument_name)
 
 
 ########################################
