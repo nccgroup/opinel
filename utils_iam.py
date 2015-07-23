@@ -35,13 +35,25 @@ import webbrowser
 #
 # Add an IAM-related argument to a recipe
 #
-def add_iam_argument(parser, argument_name):
+def add_iam_argument(parser, default_args, argument_name):
     if argument_name == 'user_name':
         parser.add_argument('--user_name',
                             dest='user_name',
                             default=[ None ],
                             nargs='+',
                             help='Your AWS IAM user name. If not provided, this script will find it automatically if you have iam:getUser privileges.')
+    elif argument_name == 'category_groups':
+        parser.add_argument('--category_groups',
+                            dest='category_groups',
+                            default=set_profile_default(default_args, 'category_groups', []),
+                            nargs='+',
+                            help='Choice of groups that all IAM users should belong to.')
+    elif argument_name == 'common_groups':
+        parser.add_argument('--common_groups',
+                            dest='common_groups',
+                            default=set_profile_default(default_args, 'common_groups', []),
+                            nargs='+',
+                            help='Groups that all IAM users should belong to.')
 
 
 ########################################
@@ -98,15 +110,8 @@ def add_user_to_common_group(iam_client, current_groups, common_groups, user, fo
 #
 # Connect to IAM
 #
-def connect_iam(key_id, secret, session_token):
-    try:
-        printInfo('Connecting to AWS IAM...')
-        aws_session = boto3.session.Session(key_id, secret, session_token)
-        return aws_session.resource('iam').meta.client
-    except Exception, e:
-        printError('Error: could not connect to IAM.')
-        printException(e)
-        return None
+def connect_iam(key_id, secret, session_token, silent = False):
+    return connect_service('IAM', key_id, secret, session_token, silent)
 
 #
 # Create default groups
@@ -236,6 +241,8 @@ def delete_user(iam_client, user, mfa_serial = None):
         printException(e)
         print 'Failed to delete login profile.'
         pass
+    # Delete inline policies
+    # TODO TODO TODO
     # Delete IAM user
     try:
         iam_client.delete_user(UserName = user)

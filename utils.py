@@ -50,7 +50,7 @@ def init_parser():
 #
 # Add a common argument to a recipe
 #
-def add_common_argument(parser, argument_name):
+def add_common_argument(parser, default_args, argument_name):
     if argument_name == 'debug':
         parser.add_argument('--debug',
                             dest='debug',
@@ -77,8 +77,8 @@ def add_common_argument(parser, argument_name):
                             help='Name of regions to run the tool in, defaults to all.')
 
 init_parser()
-add_common_argument(parser, 'debug')
-add_common_argument(parser, 'profile')
+add_common_argument(parser, {}, 'debug')
+add_common_argument(parser, {}, 'profile')
 
 
 ########################################
@@ -361,7 +361,7 @@ def read_profile_default_args(recipe_name):
     for i, arg in enumerate(sys.argv):
         if arg == '--profile' and len(sys.argv) >= i + 1:
             profile_name = sys.argv[i + 1]
-    saved_args = {}
+    default_args = {}
     recipes_dir = os.path.join(os.path.join(os.path.expanduser('~'), '.aws'), 'recipes')
     recipe_file = os.path.join(recipes_dir, profile_name + '.json')
     if os.path.isfile(recipe_file):
@@ -370,16 +370,16 @@ def read_profile_default_args(recipe_name):
         t = re.compile(r'(.*)?\.py')
         for key in config:
             if not t.match(key):
-                saved_args[key] = config[key]
+                default_args[key] = config[key]
             elif key == parser.prog:
-                saved_args.update(config[key])
-    return saved_args
+                default_args.update(config[key])
+    return default_args
 
 #
 # Returns the argument default value, customized by the user or default programmed value
 #
-def set_profile_default(saved_args, key, default):
-    return saved_args[key] if key in saved_args else default
+def set_profile_default(default_args, key, default):
+    return default_args[key] if key in default_args else default
 
 #
 # Show profile names from ~/.aws/credentials
