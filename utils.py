@@ -15,13 +15,13 @@ import shutil
 import sys
 from threading import Event, Thread
 import traceback
-import urllib2
 
 # Python2 vs Python3
 try:
     from Queue import Queue
 except ImportError:
     from queue import Queue
+
 
 ########################################
 # Globals
