@@ -419,28 +419,28 @@ def write_creds_to_aws_credentials_file(profile_name, key_id = None, secret = No
             else:
                 if profile_found:
                     if session_token and not session_token_written:
-                        print 'aws_session_token = %s' % session_token
+                        print('aws_session_token = %s' % session_token)
                         session_token_written = True
                     if mfa_serial and not mfa_serial_written:
-                        print 'aws_mfa_serial = %s' % mfa_serial
+                        print('aws_mfa_serial = %s' % mfa_serial)
                         mfa_serial_written = True
                 profile_found = False
-            print line.rstrip()
+            print(line.rstrip())
         elif profile_found:
             if re_access_key.match(line) and key_id:
-                print 'aws_access_key_id = %s' % key_id
+                print('aws_access_key_id = %s' % key_id)
             elif re_secret_key.match(line) and secret:
-                print 'aws_secret_access_key = %s' % secret
+                print('aws_secret_access_key = %s' % secret)
             elif re_mfa_serial.match(line) and mfa_serial:
-                print 'aws_mfa_serial = %s' % mfa_serial
+                print('aws_mfa_serial = %s' % mfa_serial)
                 mfa_serial_written = True
             elif re_session_token.match(line) and session_token:
-                print 'aws_session_token = %s' % session_token
+                print('aws_session_token = %s' % session_token)
                 session_token_written = True
             else:
-                print line.rstrip()
+                print(line.rstrip())
         else:
-            print line.rstrip()
+            print(line.rstrip())
 
     # Complete the profile if needed
     if profile_found:

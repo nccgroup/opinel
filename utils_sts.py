@@ -128,4 +128,4 @@ def init_sts_session_and_save_in_credentials(profile_name, credentials_file = aw
     write_creds_to_aws_credentials_file(profile_name, key_id = session_access_key, secret = session_secret_key, session_token = session_token)
 
     # Success
-    print 'Successfully configured the session token for profile \'%s\'.' % profile_name
+    printInfo('Successfully configured the session token for profile \'%s\'.' % profile_name)

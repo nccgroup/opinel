@@ -123,7 +123,7 @@ def create_default_groups(iam_client, common_groups, category_groups, dry_run):
     all_groups = common_groups + category_groups
     for group in all_groups:
         try:
-            print 'Creating group \'%s\'...' % group
+            printInfo('Creating group \'%s\'...' % group)
             if not dry_run:
                 iam_client.create_group(GroupName = group)
         except Exception as e:
@@ -137,7 +137,7 @@ def enable_mfa(iam_client, user, qrcode_file = None):
     mfa_serial = ''
     tmp_qrcode_file = None
     try:
-        print 'Enabling MFA for user \'%s\'...' % user
+        printInfo('Enabling MFA for user \'%s\'...' % user)
         mfa_device = iam_client.create_virtual_mfa_device(VirtualMFADeviceName = user)['VirtualMFADevice']
         mfa_serial = mfa_device['SerialNumber']
         mfa_png = mfa_device['QRCodePNG']
@@ -158,7 +158,7 @@ def enable_mfa(iam_client, user, qrcode_file = None):
                 raise Exception
             try:
                 iam_client.enable_mfa_device(UserName = user, SerialNumber = mfa_serial, AuthenticationCode1= mfa_code1, AuthenticationCode2 = mfa_code2)
-                print 'Succesfully enabled MFA for for \'%s\'. The device\'s ARN is \'%s\'.' % (user, mfa_serial)
+                printInfo('Succesfully enabled MFA for for \'%s\'. The device\'s ARN is \'%s\'.' % (user, mfa_serial))
                 break
             except Exception as e:
                 printException(e)
@@ -181,7 +181,7 @@ def enable_mfa(iam_client, user, qrcode_file = None):
 # Delete IAM user
 #
 def delete_user(iam_client, user, mfa_serial = None):
-    print 'Deleting user %s...' % user
+    printInfo('Deleting user %s...' % user)
     # Delete access keys
     try:
         aws_keys = get_all_access_keys(iam_client, user)
@@ -214,7 +214,7 @@ def delete_user(iam_client, user, mfa_serial = None):
             delete_virtual_mfa_device(iam_client, mfa_serial)
     except Exception as e:
         printException(e)
-        print 'Failed to fetch MFA device serial number for user %s' % user
+        printError('Failed to fetch MFA device serial number for user %s' % user)
         pass
     # Remove IAM user from groups
     try:
@@ -225,10 +225,10 @@ def delete_user(iam_client, user, mfa_serial = None):
                 iam_client.remove_user_from_group(GroupName = group['GroupName'], UserName = user)
             except Exception as e:
                 printException(e)
-                print 'Failed to remove user %s from group %s' % (user, group)
+                printError('Failed to remove user %s from group %s' % (user, group))
     except Exception as e:
         printException(e)
-        print 'Failed to fetch IAM groups for user %s' % user
+        printError('Failed to fetch IAM groups for user %s' % user)
         pass
     # Delete login profile
     login_profile = []
@@ -242,7 +242,7 @@ def delete_user(iam_client, user, mfa_serial = None):
             iam_client.delete_login_profile(UserName = user)
     except Exception as e:
         printException(e)
-        print 'Failed to delete login profile.'
+        printError('Failed to delete login profile.')
         pass
     # Delete inline policies
     # TODO TODO TODO
@@ -252,7 +252,7 @@ def delete_user(iam_client, user, mfa_serial = None):
         printInfo('User %s deleted.' % user)
     except Exception as e:
         printException(e)
-        print 'Failed to delete user.'
+        printError('Failed to delete user.')
         pass
 
 #
@@ -284,7 +284,7 @@ def display_qr_code(png, seed):
     if _fabulous_available:
         fabulous.utils.term.bgcolor = 'white'
         with open(qrcode_file.name, 'rb') as png_file:
-            print fabulous.image.Image(png_file, 100)
+            print(fabulous.image.Image(png_file, 100))
     else:
         graphical_browsers = [webbrowser.BackgroundBrowser,
                               webbrowser.Mozilla,
@@ -304,13 +304,13 @@ def display_qr_code(png, seed):
             pass
 
         if browser_type in graphical_browsers:
-            print "Unable to print qr code directly to your terminal, trying a web browser."
+            printError("Unable to print qr code directly to your terminal, trying a web browser.")
             webbrowser.open('file://' + qrcode_file.name)
         else:
-            print "Unable to print qr code directly to your terminal, and no graphical web browser seems available."
-            print "But, the qr code file is temporarily available as this file:"
-            print "\n    %s\n" % qrcode_file.name
-            print "Alternately, if you feel like typing the seed manually into your MFA app:"
+            printInfo("Unable to print qr code directly to your terminal, and no graphical web browser seems available.")
+            printInfo("But, the qr code file is temporarily available as this file:")
+            printInfo("\n    %s\n" % qrcode_file.name)
+            printInfo("Alternately, if you feel like typing the seed manually into your MFA app:")
             # this is a base32-encoded binary string (for case
             # insensitivity) which is then dutifully base64-encoded by
             # amazon before putting it on the wire.  so the actual
@@ -318,7 +318,7 @@ def display_qr_code(png, seed):
             # will need to type in to their app is just
             # b64decode(seed).  print that out so users can (if
             # desperate) type in their MFA app.
-            print "\n    %s\n" % base64.b64decode(seed)
+            printInfo("\n    %s\n" % base64.b64decode(seed))
     return qrcode_file
 
 #
@@ -369,7 +369,7 @@ def handle_truncated_responses(callback, callback_args, items_name):
 def init_iam_group_category_regex(category_groups, arg_category_regex):
     # Must have as many regex as groups
     if len(arg_category_regex) and len(category_groups) != len(arg_category_regex):
-        print 'Error: you must provide as many regex as category groups.'
+        printError('Error: you must provide as many regex as category groups.')
         return None
     else:
         category_regex = []
@@ -385,6 +385,6 @@ def init_iam_group_category_regex(category_groups, arg_category_regex):
 #
 def list_access_keys(iam_client, user_name):
     keys = handle_truncated_responses(iam_client.list_access_keys, {'UserName':user_name, 'MaxItems': 1}, 'AccessKeyMetadata')
-    print 'User \'%s\' currently has %s access keys:' % (user_name, len(keys))
+    printInfo('User \'%s\' currently has %s access keys:' % (user_name, len(keys)))
     for key in keys:
-        print '\t%s (%s)' % (key['AccessKeyId'], key['Status'])
+        printInfo('\t%s (%s)' % (key['AccessKeyId'], key['Status']))
