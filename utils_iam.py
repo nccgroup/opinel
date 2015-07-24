@@ -16,6 +16,7 @@ try:
     fabulous.utils.pil_check()
 except ImportError:
     _fabulous_available = False
+    pass
 
 # Import stock packages
 import base64
