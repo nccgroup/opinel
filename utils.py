@@ -2,16 +2,13 @@
 
 # Import third-party packages
 import argparse
-import boto
 import boto3
-from boto import utils
 import copy
 from collections import Counter
 from distutils import dir_util
 import json
 import fileinput
 import os
-from Queue import Queue
 import re
 import requests
 import shutil
@@ -19,6 +16,12 @@ import sys
 from threading import Event, Thread
 import traceback
 import urllib2
+
+# Python2 vs Python3
+try:
+    from Queue import Queue
+except ImportError:
+    from queue import Queue
 
 ########################################
 # Globals
@@ -327,7 +330,8 @@ def read_creds_from_ec2_instance_metadata():
     secret = None
     token = None
     try:
-        metadata = boto.utils.get_instance_metadata(timeout=1, num_retries=1)
+        # fixme
+        metadata = None #boto.utils.get_instance_metadata(timeout=1, num_retries=1)
         if metadata:
             for role in metadata['iam']['security-credentials']:
                 key_id = metadata['iam']['security-credentials'][role]['AccessKeyId']
