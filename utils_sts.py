@@ -84,7 +84,7 @@ def connect_sts(key_id, secret, session_token):
     try:
         printInfo('Connecting to AWS STS...')
         return boto3.client('sts', aws_access_key_id = key_id, aws_secret_access_key = secret, aws_session_token = session_token)
-    except Exception, e:
+    except Exception as e:
         printError('Error: could not connect to STS.')
         printException(e)
         return None

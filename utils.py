@@ -164,7 +164,7 @@ def check_boto_version():
                     latest_boto_version = tag['name']
             if boto.Version < latest_boto_version:
                 printError('Warning: the version of boto installed (%s) is not the latest available (%s). Consider upgrading to ensure that all features are enabled.' % (boto.Version, latest_boto_version))
-        except Exception, e:
+        except Exception as e:
             printError('Warning: connection to the Github API failed.')
             printException(e)
     return True
@@ -182,7 +182,7 @@ def connect_service(service, key_id, secret, session_token, region = None, silen
             if not silent:
                 printInfo('Connecting to AWS %s...' % service)
             return boto3.client(service.lower(), aws_access_key_id = key_id, aws_secret_access_key = secret, aws_session_token = session_token)
-    except Exception, e:
+    except Exception as e:
         printError('Error: could not connect to %s.' % service)
         printException(e)
         return None
@@ -295,7 +295,7 @@ def read_creds_from_aws_credentials_file(profile_name, credentials_file = aws_cr
                         mfa_serial = (line.split(' ')[2]).rstrip()
                     elif re_session_token.match(line):
                         security_token = (line.split(' ')[2]).rstrip()
-    except Exception, e:
+    except Exception as e:
         pass
     return key_id, secret, mfa_serial, security_token
 
@@ -334,7 +334,7 @@ def read_creds_from_ec2_instance_metadata():
                 secret = metadata['iam']['security-credentials'][role]['SecretAccessKey']
                 token = metadata['iam']['security-credentials'][role]['Token']
         return key_id, secret, token
-    except Exception, e:
+    except Exception as e:
         pass
 
 #

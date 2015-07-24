@@ -126,7 +126,7 @@ def create_default_groups(iam_client, common_groups, category_groups, dry_run):
             print 'Creating group \'%s\'...' % group
             if not dry_run:
                 iam_client.create_group(GroupName = group)
-        except Exception, e:
+        except Exception as e:
             printException(e)
             pass
 
@@ -152,7 +152,7 @@ def enable_mfa(iam_client, user, qrcode_file = None):
             if mfa_code1 == 'q' or mfa_code2 == 'q':
                 try:
                     delete_virtual_mfa_device(iam_client, mfa_serial)
-                except Exception, e:
+                except Exception as e:
                     printException(e)
                     pass
                 raise Exception
@@ -160,10 +160,10 @@ def enable_mfa(iam_client, user, qrcode_file = None):
                 iam_client.enable_mfa_device(UserName = user, SerialNumber = mfa_serial, AuthenticationCode1= mfa_code1, AuthenticationCode2 = mfa_code2)
                 print 'Succesfully enabled MFA for for \'%s\'. The device\'s ARN is \'%s\'.' % (user, mfa_serial)
                 break
-            except Exception, e:
+            except Exception as e:
                 printException(e)
                 pass
-    except Exception, e:
+    except Exception as e:
         printException(e)
         # We shouldn't return normally because if we've gotten here
         # the user has potentially not set up the MFA device
@@ -189,11 +189,11 @@ def delete_user(iam_client, user, mfa_serial = None):
             try:
                 printInfo('Deleting access key ID %s...' % aws_key['AccessKeyId'])
                 iam_client.delete_access_key(AccessKeyId = aws_key['AccessKeyId'], UserName = user)
-            except Exception, e:
+            except Exception as e:
                 printException(e)
                 printError('Failed to delete access key %s' % aws_key['AccessKeyId'])
                 pass
-    except Exception, e:
+    except Exception as e:
         printException(e)
         printError('Failed to get access keys for user %s' % user)
         pass
@@ -205,14 +205,14 @@ def delete_user(iam_client, user, mfa_serial = None):
             try:
                 printInfo('Deactivating MFA device %s...' % serial)
                 iam_client.deactivate_mfa_device(SerialNumber = serial, UserName = user)
-            except Exception, e:
+            except Exception as e:
                 printException(e)
                 printError('Failed to deactivate MFA device %s' % serial)
                 pass
             delete_virtual_mfa_device(iam_client, serial)
         if mfa_serial:
             delete_virtual_mfa_device(iam_client, mfa_serial)
-    except Exception, e:
+    except Exception as e:
         printException(e)
         print 'Failed to fetch MFA device serial number for user %s' % user
         pass
@@ -223,10 +223,10 @@ def delete_user(iam_client, user, mfa_serial = None):
             try:
                 printInfo('Removing user %s from group %s...' % (user, group['GroupName']))
                 iam_client.remove_user_from_group(GroupName = group['GroupName'], UserName = user)
-            except Exception, e:
+            except Exception as e:
                 printException(e)
                 print 'Failed to remove user %s from group %s' % (user, group)
-    except Exception, e:
+    except Exception as e:
         printException(e)
         print 'Failed to fetch IAM groups for user %s' % user
         pass
@@ -234,13 +234,13 @@ def delete_user(iam_client, user, mfa_serial = None):
     login_profile = []
     try:
         login_profile = iam_client.get_login_profile(UserName = user)['LoginProfile']
-    except Exception, e:
+    except Exception as e:
         pass
     try:
         if len(login_profile):
             printInfo('Deleting login profile for user %s...' % user)
             iam_client.delete_login_profile(UserName = user)
-    except Exception, e:
+    except Exception as e:
         printException(e)
         print 'Failed to delete login profile.'
         pass
@@ -250,7 +250,7 @@ def delete_user(iam_client, user, mfa_serial = None):
     try:
         iam_client.delete_user(UserName = user)
         printInfo('User %s deleted.' % user)
-    except Exception, e:
+    except Exception as e:
         printException(e)
         print 'Failed to delete user.'
         pass
@@ -262,7 +262,7 @@ def delete_virtual_mfa_device(iam_client, mfa_serial):
     try:
         printInfo('Deleting MFA device %s...' % mfa_serial)
         iam_client.delete_virtual_mfa_device(SerialNumber = mfa_serial)
-    except Exception, e:
+    except Exception as e:
         printException(e)
         printError('Failed to delete MFA device %s' % mfa_serial)
         pass   
@@ -329,7 +329,7 @@ def fetch_from_current_user(iam_client, aws_key_id, property_name):
         # Fetch all users
         user = iam_client.get_user()['User']
         return user[property_name]
-    except Exception, e:
+    except Exception as e:
         printException(e)
 
 #

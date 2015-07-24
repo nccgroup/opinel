@@ -19,7 +19,7 @@ from boto.ec2 import elb
 def connect_ec2(key_id, secret, session_token,  region_name):
     try:
         return boto.ec2.connect_to_region(region_name, aws_access_key_id = key_id, aws_secret_access_key = secret, security_token = session_token)
-    except Exception, e:
+    except Exception as e:
         printException(e)
         return None
 
@@ -30,6 +30,6 @@ def connect_ec2(key_id, secret, session_token,  region_name):
 def connect_elb(key_id, secret, session_token, region_name):
     try:
         return boto.ec2.elb.connect_to_region(region_name, aws_access_key_id = key_id, aws_secret_access_key = secret, security_token = session_token)
-    except Exception, e:
+    except Exception as e:
         printException(e)
         return None
