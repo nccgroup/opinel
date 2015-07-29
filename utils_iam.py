@@ -348,22 +348,6 @@ def get_category_group_from_user_name(user, category_groups, category_regex):
     return None
 
 #
-# Handle truncated responses
-#
-def handle_truncated_responses(callback, callback_args, items_name):
-    marker_value = None
-    items = []
-    while True:
-        if marker_value != None:
-            callback_args['Marker'] = marker_value
-        result = callback(**callback_args)
-        marker_value = result['Marker'] if bool(result['IsTruncated']) == True else None
-        items = items + result[items_name]
-        if marker_value is None:
-            break
-    return items
-
-#
 # Initialize and compile regular expression for category groups
 #
 def init_iam_group_category_regex(category_groups, arg_category_regex):

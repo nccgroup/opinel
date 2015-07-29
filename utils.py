@@ -108,17 +108,9 @@ def configPrintException(enable):
 
 def printError(msg, newLine = True):
     printGeneric(sys.stderr, msg, newLine)
-#    sys.stderr.write(msg)
-#    if newLine == True:
-#        sys.stderr.write('\n')
-#    sys.stderr.flush()
 
 def printInfo(msg, newLine = True ):
     printGeneric(sys.stdout, msg, newLine)
-#    sys.stdout.write(msg)
-#    if newLine == True:
-#        sys.stdout.write('\n')
-#    sys.stdout.flush()
 
 def printGeneric(out, msg, newLine = True):
     out.write(msg)
@@ -152,10 +144,11 @@ def build_region_list(service, chosen_regions = [], include_gov = False, include
 #
 def check_boto_version():
     printInfo('Checking the version of boto...')
+    # TODO: read that from requirements file...
     min_boto_version = '2.31.1'
     latest_boto_version = 0
-    if boto.Version < min_boto_version:
-        printError('Error: the version of boto installed on this system (%s) is too old. Boto version %s or newer is required.' % (boto.Version, min_boto_version))
+    if False: #  boto.Version < min_boto_version:
+        printError('Error: the version of boto installed on this system (%s) is too old. Boto version %s or newer is required.' % (boto3.__version__, min_boto_version))
         return False
     else:
         try:
@@ -165,8 +158,8 @@ def check_boto_version():
             for tag in tags:
                 if release_tag_regex.match(tag['name']) and tag['name'] > latest_boto_version:
                     latest_boto_version = tag['name']
-            if boto.Version < latest_boto_version:
-                printError('Warning: the version of boto installed (%s) is not the latest available (%s). Consider upgrading to ensure that all features are enabled.' % (boto.Version, latest_boto_version))
+            if False: # boto.Version < latest_boto_version:
+                printError('Warning: the version of boto installed (%s) is not the latest available (%s). Consider upgrading to ensure that all features are enabled.' % (boto3.__version__, latest_boto_version))
         except Exception as e:
             printError('Warning: connection to the Github API failed.')
             printException(e)
@@ -175,16 +168,26 @@ def check_boto_version():
 #
 # Connect to any service
 #
-def connect_service(service, key_id, secret, session_token, region = None, silent = False):
+def connect_service(service, key_id, secret, session_token, region_name = None, config = None, silent = False):
     try:
-        if region:
-            if not silent:
-                printInfo('Connecting to AWS %s in region %s...' % (service, region))
-            return boto3.client(service.lower(), aws_access_key_id = key_id, aws_secret_access_key = secret, aws_session_token = session_token, region_name = region)
-        else:
-            if not silent:
-                printInfo('Connecting to AWS %s...' % service)
-            return boto3.client(service.lower(), aws_access_key_id = key_id, aws_secret_access_key = secret, aws_session_token = session_token)
+        client_params = {}
+        client_params['service_name'] = service.lower()
+        session_params = {}
+        session_params['aws_access_key_id'] = key_id
+        session_params['aws_secret_access_key'] = secret
+        session_params['aws_session_token'] = session_token
+        if region_name:
+            client_params['region_name'] = region_name
+            session_params['region_name'] = region_name
+        if config:
+            client_params['config'] = config
+        aws_session = boto3.session.Session(**session_params)
+        return aws_session.client(**client_params)
+        if not silent:
+            infoMessage = 'Connecting to AWS %s' % service
+            if region_name:
+                infoMessage = infoMessage + ' in %s' % region_name
+            printInfo(infoMessage + '...')
     except Exception as e:
         printError('Error: could not connect to %s.' % service)
         printException(e)
@@ -197,6 +200,22 @@ def get_environment_name(args):
     elif args.environment_name:
         environment_name = args.environment_name[0]
     return environment_name
+
+#
+# Handle truncated responses
+#
+def handle_truncated_responses(callback, callback_args, items_name):
+    marker_value = None
+    items = []
+    while True:
+        if marker_value != None:
+            callback_args['Marker'] = marker_value
+        result = callback(**callback_args)
+        marker_value = result['Marker'] if bool(result['IsTruncated']) == True else None
+        items = items + result[items_name]
+        if marker_value is None:
+            break
+    return items
 
 def manage_dictionary(dictionary, key, init, callback=None):
     if not str(key) in dictionary:

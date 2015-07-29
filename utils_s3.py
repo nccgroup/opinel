@@ -3,9 +3,6 @@
 # Import AWS utils
 from AWSUtils.utils import *
 
-# Import third-party packages
-import boto
-
 
 ########################################
 ##### Helpers
@@ -14,9 +11,5 @@ import boto
 #
 # Connect to S3
 #
-def connect_s3(key_id, secret, session_token):
-    try:
-        return boto.connect_s3(aws_access_key_id = key_id, aws_secret_access_key = secret, security_token = session_token)
-    except Exception as e:
-        printException(e)
-        return None
+def connect_s3(key_id, secret, session_token, region_name = None, config = None, silent = False):
+    return connect_service('S3', key_id, secret, session_token, region_name, config, silent)
