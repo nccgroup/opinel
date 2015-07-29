@@ -3,10 +3,6 @@
 # Import AWS utils
 from AWSUtils.utils import *
 
-# Import third-party packages
-import boto
-from boto import rds
-
 
 ########################################
 ##### Helpers
@@ -16,8 +12,4 @@ from boto import rds
 # Connect to RDS
 #
 def connect_rds(key_id, secret, session_token, region_name):
-    try:
-        return boto.rds.connect_to_region(region_name, aws_access_key_id = key_id, aws_secret_access_key = secret, security_token = session_token)
-    except Exception as e:
-        printException(e)
-        return None
+    return connect_service('rds', key_id, secret, session_token, region_name)
