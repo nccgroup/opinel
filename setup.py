@@ -14,6 +14,7 @@ requirements = []
 with open('requirements.txt') as f:
     for r in f.readlines():
         requirements.append(r.strip())
+print(requirements)
 
 # Setup
 setup(
@@ -40,7 +41,6 @@ setup(
         'Intended Audience :: System Administrators',
         'Natural Language :: English',
         'License :: OSI Approved :: GNU General Public License v2 (GPLv2)',
-        'Operating System :: OS Independent',
         'Programming Language :: Python',
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
