@@ -1,23 +1,28 @@
 #!/usr/bin/env python2
 
-# Import third-party packages
+# Import stock packages
 import argparse
-import boto
-from boto import utils
-from collections import Counter
 import copy
+from collections import Counter
 from distutils import dir_util
 import json
 import fileinput
 import os
-from Queue import Queue
 import re
-import requests
 import shutil
 import sys
 from threading import Event, Thread
 import traceback
-import urllib2
+# Python2 vs Python3
+try:
+    from Queue import Queue
+except ImportError:
+    from queue import Queue
+
+# Import third-party packages
+import boto3
+import requests
+
 
 ########################################
 # Globals
@@ -34,7 +39,6 @@ re_gov_region = re.compile(r'(.*)?-gov-(.*)?')
 re_cn_region = re.compile(r'^cn-(.*)?')
 
 aws_credentials_file = os.path.join(os.path.join(os.path.expanduser('~'), '.aws'), 'credentials')
-aws_credentials_file_no_mfa = os.path.join(os.path.join(os.path.expanduser('~'), '.aws'), 'credentials.no-mfa')
 aws_credentials_file_tmp = os.path.join(os.path.join(os.path.expanduser('~'), '.aws'), 'credentials.tmp')
 
 
@@ -47,17 +51,40 @@ def init_parser():
         global parser
         parser = argparse.ArgumentParser()
 
+#
+# Add a common argument to a recipe
+#
+def add_common_argument(parser, default_args, argument_name):
+    if argument_name == 'debug':
+        parser.add_argument('--debug',
+                            dest='debug',
+                            default=False,
+                            action='store_true',
+                            help='Print the stack trace when exception occurs')
+    elif argument_name == 'dry-run':
+        parser.add_argument('--dry-run',
+                            dest='dry_run',
+                            default=False,
+                            action='store_true',
+                            help='Executes read-only actions (check status, get*, list*...)')
+    elif argument_name == 'profile':
+        parser.add_argument('--profile',
+                            dest='profile',
+                            default= [ 'default' ],
+                            nargs='+',
+                            help='Name of the profile')
+    elif argument_name == 'region':
+        parser.add_argument('--region',
+                            dest='region',
+                            default=[ ],
+                            nargs='+',
+                            help='Name of regions to run the tool in, defaults to all')
+    else:
+        raise Exception('Invalid parameter name %s' % argument_name)
+
 init_parser()
-parser.add_argument('--debug',
-                    dest='debug',
-                    default=False,
-                    action='store_true',
-                    help='Print the stack trace when exception occurs')
-parser.add_argument('--profile',
-                    dest='profile',
-                    default= [ 'default' ],
-                    nargs='+',
-                    help='Name of the profile')
+add_common_argument(parser, {}, 'debug')
+add_common_argument(parser, {}, 'profile')
 
 
 ########################################
@@ -67,13 +94,30 @@ parser.add_argument('--profile',
 def printException(e):
     global verbose_exceptions
     if verbose_exceptions:
-        print traceback.format_exc()
+        printError(str(traceback.format_exc()))
     else:
-        print e
+        printError(str(e))
 
 def configPrintException(enable):
     global verbose_exceptions
     verbose_exceptions = enable
+
+
+########################################
+##### Output functions
+########################################
+
+def printError(msg, newLine = True):
+    printGeneric(sys.stderr, msg, newLine)
+
+def printInfo(msg, newLine = True ):
+    printGeneric(sys.stdout, msg, newLine)
+
+def printGeneric(out, msg, newLine = True):
+    out.write(msg)
+    if newLine == True:
+        out.write('\n')
+    out.flush()
 
 
 ########################################
@@ -83,45 +127,102 @@ def configPrintException(enable):
 #
 # Build the list of target region names
 #
-def build_region_list(boto_regions, chosen_regions = [], include_gov = False, include_cn = False):
-    boto_region_names = []
-    for region in boto_regions:
-        if (not re_gov_region.match(region.name) or include_gov) and (not re_cn_region.match(region.name) or include_cn):
-            boto_region_names.append(region.name)
+def build_region_list(service, chosen_regions = [], include_gov = False, include_cn = False):
+    boto_regions = []
+    # h4ck pending botocore issue 339
+    with open('AWSUtils/boto-endpoints.json', 'rt') as f:
+        boto_endpoints = json.load(f)
+        if not service in boto_endpoints:
+            printError('Error: the service \'%s\' is not supported yet.' % service)
+            return []
+        for region in boto_endpoints[service]:
+            if (not re_gov_region.match(region) or include_gov) and (not re_cn_region.match(region) or include_cn):
+                boto_regions.append(region)
     if len(chosen_regions):
-        return list((Counter(boto_region_names) & Counter(chosen_regions)).elements())
+        return list((Counter(boto_regions) & Counter(chosen_regions)).elements())
     else:
-        return boto_region_names
+        return boto_regions
 
-def check_boto_version():
-    print 'Checking the version of boto...'
-    min_boto_version = '2.31.1'
-    latest_boto_version = 0
-    if boto.Version < min_boto_version:
-        print 'Error: the version of boto installed on this system (%s) is too old. Boto version %s or newer is required.' % (boto.Version, min_boto_version)
+#
+# Check boto version
+#
+def check_boto3_version():
+    printInfo('Checking the version of boto...')
+    # TODO: read that from requirements file...
+    min_boto3_version = '1.1.1'
+    latest_boto3_version = 0
+    if boto3.__version__ < min_boto3_version:
+        printError('Error: the version of boto3 installed on this system (%s) is too old. Boto version %s or newer is required.' % (boto3.__version__, min_boto3_version))
         return False
     else:
         try:
             # Warn users who have not the latest version of boto installed
             release_tag_regex = re.compile('(\d+)\.(\d+)\.(\d+)')
-            tags = requests.get('https://api.github.com/repos/boto/boto/tags').json()
+            tags = requests.get('https://api.github.com/repos/boto/boto3/tags').json()
             for tag in tags:
-                if release_tag_regex.match(tag['name']) and tag['name'] > latest_boto_version:
-                    latest_boto_version = tag['name']
-            if boto.Version < latest_boto_version:
-                print 'Warning: the version of boto installed (%s) is not the latest available (%s). Consider upgrading to ensure that all features are enabled.' % (boto.Version, latest_boto_version)
-        except Exception, e:
-            print 'Warning: connection to the Github API failed.'
+                if release_tag_regex.match(tag['name']) and tag['name'] > latest_boto3_version:
+                    latest_boto3_version = tag['name']
+            if boto3.__version__ < latest_boto3_version:
+                printError('Warning: the version of boto installed (%s) is not the latest available (%s). Consider upgrading to ensure that all features are enabled.' % (boto3.__version__, latest_boto3_version))
+        except Exception as e:
+            printError('Warning: connection to the Github API failed.')
             printException(e)
     return True
 
+#
+# Connect to any service
+#
+def connect_service(service, key_id, secret, session_token, region_name = None, config = None, silent = False):
+    try:
+        client_params = {}
+        client_params['service_name'] = service.lower()
+        session_params = {}
+        session_params['aws_access_key_id'] = key_id
+        session_params['aws_secret_access_key'] = secret
+        session_params['aws_session_token'] = session_token
+        if region_name:
+            client_params['region_name'] = region_name
+            session_params['region_name'] = region_name
+        if config:
+            client_params['config'] = config
+        aws_session = boto3.session.Session(**session_params)
+        return aws_session.client(**client_params)
+        if not silent:
+            infoMessage = 'Connecting to AWS %s' % service
+            if region_name:
+                infoMessage = infoMessage + ' in %s' % region_name
+            printInfo(infoMessage + '...')
+    except Exception as e:
+        printError('Error: could not connect to %s.' % service)
+        printException(e)
+        return None
+
+#
+# Return with priority: profile_name/environment_name/None
+#
 def get_environment_name(args):
     environment_name = None
     if 'profile' in args and args.profile[0] != 'default':
         environment_name = args.profile[0]
-    elif args.environment_name:
+    elif 'environment_name' in args and args.environment_name:
         environment_name = args.environment_name[0]
     return environment_name
+
+#
+# Handle truncated responses
+#
+def handle_truncated_responses(callback, callback_args, items_name):
+    marker_value = None
+    items = []
+    while True:
+        if marker_value != None:
+            callback_args['Marker'] = marker_value
+        result = callback(**callback_args)
+        marker_value = result['Marker'] if bool(result['IsTruncated']) == True else None
+        items = items + result[items_name]
+        if marker_value is None:
+            break
+    return items
 
 def manage_dictionary(dictionary, key, init, callback=None):
     if not str(key) in dictionary:
@@ -131,12 +232,7 @@ def manage_dictionary(dictionary, key, init, callback=None):
             callback(dictionary[key])
     return dictionary
 
-def thread_work(connection_info, service_info, targets, function, display_function = None, service_params = {}, num_threads = 0):
-    if display_function:
-        # Status
-        stop_display_thread = Event()
-        display_thread = Thread(target=display_function, args=(service_info, stop_display_thread,))
-        display_thread.start()
+def thread_work(connection_info, service_info, targets, function, service_params = {}, num_threads = 0):
     # Init queue and threads
     q = Queue(maxsize=0)
     if not num_threads:
@@ -148,8 +244,6 @@ def thread_work(connection_info, service_info, targets, function, display_functi
     for target in targets:
         q.put([service_info, target])
     q.join()
-    if display_function:
-        stop_display_thread.set()
 
 ########################################
 # Credentials read/write functions
@@ -167,9 +261,9 @@ def init_sts_session(key_id, secret, mfa_serial = None, mfa_code = None):
         # Prompt for MFA code
         mfa_code = prompt_4_mfa_code()
     # Fetch session token and set the duration to 8 hours
-    sts_connection = boto.connect_sts(key_id, secret)
-    sts_response = sts_connection.get_session_token(mfa_serial_number = mfa_serial, mfa_token = mfa_code, duration = 28800)
-    return sts_response.access_key, sts_response.secret_key, sts_response.session_token
+    sts_client = boto3.session.Session(key_id, secret).client('sts')
+    sts_response = sts_client.get_session_token(SerialNumber = mfa_serial, TokenCode = mfa_code, DurationSeconds = 28800)
+    return sts_response['Credentials']['AccessKeyId'], sts_response['Credentials']['SecretAccessKey'], sts_response['Credentials']['SessionToken']
 
 #
 # Read credentials from anywhere
@@ -192,9 +286,10 @@ def read_creds(profile_name, csv_file = None, mfa_serial_arg = None, mfa_code = 
     # If an MFA serial was provided as an argument, discard whatever we found in config file
     if mfa_serial_arg:
         mfa_serial = mfa_serial_arg
-    # If we have an MFA serial number or MFA code and no token yet, initiate an STS session
-    if (mfa_serial or mfa_code) and not token:
-        key_id, secret, token = init_sts_session(key_id, secret, mfa_serial, mfa_code)
+    # If we don't have valid creds by now, throw an exception
+    if key_id == None or secret == None:
+        printError('Error: could not find AWS credentials. Use the --help option for more information.\n')
+        raise Exception
     return key_id, secret, token
 
 #
@@ -223,7 +318,7 @@ def read_creds_from_aws_credentials_file(profile_name, credentials_file = aws_cr
                         mfa_serial = (line.split(' ')[2]).rstrip()
                     elif re_session_token.match(line):
                         security_token = (line.split(' ')[2]).rstrip()
-    except Exception, e:
+    except Exception as e:
         pass
     return key_id, secret, mfa_serial, security_token
 
@@ -244,7 +339,7 @@ def read_creds_from_csv(filename):
                         username, key_id, secret, mfa_serial = line.split(',')
                         mfa_serial = mfa_serial.rstrip()
                     except:
-                        print 'Error, the CSV file is not properly formatted'
+                        printError('Error, the CSV file is not properly formatted')
     return key_id.rstrip(), secret.rstrip(), mfa_serial
 
 #
@@ -254,13 +349,17 @@ def read_creds_from_ec2_instance_metadata():
     key_id = None
     secret = None
     token = None
-    metadata = boto.utils.get_instance_metadata(timeout=1, num_retries=1)
-    if metadata:
-        for role in metadata['iam']['security-credentials']:
-            key_id = metadata['iam']['security-credentials'][role]['AccessKeyId']
-            secret = metadata['iam']['security-credentials'][role]['SecretAccessKey']
-            token = metadata['iam']['security-credentials'][role]['Token']
-    return key_id, secret, token
+    try:
+        # fixme
+        metadata = None #boto.utils.get_instance_metadata(timeout=1, num_retries=1)
+        if metadata:
+            for role in metadata['iam']['security-credentials']:
+                key_id = metadata['iam']['security-credentials'][role]['AccessKeyId']
+                secret = metadata['iam']['security-credentials'][role]['SecretAccessKey']
+                token = metadata['iam']['security-credentials'][role]['Token']
+        return key_id, secret, token
+    except Exception as e:
+        pass
 
 #
 # Read credentials from environment variables
@@ -281,11 +380,12 @@ def read_creds_from_environment_variables():
 # Read default argument values for a recipe
 #
 def read_profile_default_args(recipe_name):
+    profile_name = 'default'
     # h4ck to have an early read of the profile name
     for i, arg in enumerate(sys.argv):
         if arg == '--profile' and len(sys.argv) >= i + 1:
             profile_name = sys.argv[i + 1]
-    saved_args = {}
+    default_args = {}
     recipes_dir = os.path.join(os.path.join(os.path.expanduser('~'), '.aws'), 'recipes')
     recipe_file = os.path.join(recipes_dir, profile_name + '.json')
     if os.path.isfile(recipe_file):
@@ -294,23 +394,23 @@ def read_profile_default_args(recipe_name):
         t = re.compile(r'(.*)?\.py')
         for key in config:
             if not t.match(key):
-                saved_args[key] = config[key]
+                default_args[key] = config[key]
             elif key == parser.prog:
-                saved_args.update(config[key])
-    return saved_args
+                default_args.update(config[key])
+    return default_args
 
 #
 # Returns the argument default value, customized by the user or default programmed value
 #
-def set_profile_default(saved_args, key, default):
-    return saved_args[key] if key in saved_args else default
+def set_profile_default(default_args, key, default):
+    return default_args[key] if key in default_args else default
 
 #
-# Show profile names from ~/.aws/credentials and ~/.aws/credentials.no-mfa
+# Show profile names from ~/.aws/credentials
 #
 def show_profiles_from_aws_credentials_file():
     profiles = []
-    files = [ aws_credentials_file, aws_credentials_file_no_mfa ]
+    files = [ aws_credentials_file ]
     for filename in files:
         if os.path.isfile(filename):
             with open(filename) as f:
@@ -320,29 +420,21 @@ def show_profiles_from_aws_credentials_file():
                     if groups:
                         profiles.append(groups.groups()[0])
     for profile in set(profiles):
-        print ' * %s' % profile
+        printInfo(' * %s' % profile)
 
 #
 # Write credentials to AWS config file
 #
-def write_creds_to_aws_credentials_file(profile_name, key_id = None, secret = None, session_token = None, mfa_serial = None, credentials_file = aws_credentials_file, use_no_mfa_file = True):
-    re_profile = re.compile(r'\[%s\]' % profile_name)
+def write_creds_to_aws_credentials_file(profile_name, key_id = None, secret = None, session_token = None, mfa_serial = None):
     profile_found = False
     profile_ever_found = False
     session_token_written = False
     mfa_serial_written = False
-    if not os.path.isfile(credentials_file):
-        if use_no_mfa_file and os.path.isfile(aws_credentials_file_no_mfa):
-            # copy credentials.no-mfa if target file does not exist
-            shutil.copyfile(aws_credentials_file_no_mfa, credentials_file)
-        elif not use_no_mfa_file:
-            # Copy credentials if target file does not exist
-            shutil.copyfile(aws_credentials_file, credentials_file)
-        else:
-            # Create an empty file if credentials.no-mfa does not exist
-            open(credentials_file, 'a').close()
+    # Create an empty file if target does not exist
+    if not os.path.isfile(aws_credentials_file):
+        open(aws_credentials_file, 'a').close()
     # Open and parse/edit file
-    for line in fileinput.input(credentials_file, inplace=True):
+    for line in fileinput.input(aws_credentials_file, inplace=True):
         profile_line = re_profile_name.match(line)
         if profile_line:
             if profile_line.groups()[0] == profile_name:
@@ -351,37 +443,37 @@ def write_creds_to_aws_credentials_file(profile_name, key_id = None, secret = No
             else:
                 if profile_found:
                     if session_token and not session_token_written:
-                        print 'aws_session_token = %s' % session_token
+                        print('aws_session_token = %s' % session_token)
                         session_token_written = True
                     if mfa_serial and not mfa_serial_written:
-                        print 'aws_mfa_serial = %s' % mfa_serial
+                        print('aws_mfa_serial = %s' % mfa_serial)
                         mfa_serial_written = True
                 profile_found = False
-            print line.rstrip()
+            print(line.rstrip())
         elif profile_found:
             if re_access_key.match(line) and key_id:
-                print 'aws_access_key_id = %s' % key_id
+                print('aws_access_key_id = %s' % key_id)
             elif re_secret_key.match(line) and secret:
-                print 'aws_secret_access_key = %s' % secret
+                print('aws_secret_access_key = %s' % secret)
             elif re_mfa_serial.match(line) and mfa_serial:
-                print 'aws_mfa_serial = %s' % mfa_serial
+                print('aws_mfa_serial = %s' % mfa_serial)
                 mfa_serial_written = True
             elif re_session_token.match(line) and session_token:
-                print 'aws_session_token = %s' % session_token
+                print('aws_session_token = %s' % session_token)
                 session_token_written = True
             else:
-                print line.rstrip()
+                print(line.rstrip())
         else:
-            print line.rstrip()
+            print(line.rstrip())
 
     # Complete the profile if needed
     if profile_found:
-        with open(credentials_file, 'a') as f:
+        with open(aws_credentials_file, 'a') as f:
             complete_profile(f, session_token, session_token_written, mfa_serial, mfa_serial_written)
 
-    # Add new profile if only found in .no-mfa configuration file
+    # Add new profile if not found
     if not profile_ever_found:
-        with open(credentials_file, 'a') as f:
+        with open(aws_credentials_file, 'a') as f:
             f.write('[%s]\n' % profile_name)
             f.write('aws_access_key_id = %s\n' % key_id)
             f.write('aws_secret_access_key = %s\n' % secret)
@@ -409,14 +501,16 @@ def prompt_4_mfa_code(activate = False):
         if activate:
             prompt_string = 'Enter the next value: '
         else:
-            prompt_string = 'Enter your MFA code: '
+            prompt_string = 'Enter your MFA code (or \'q\' to abort): '
         mfa_code = prompt_4_value(prompt_string, no_confirm = True)
         try:
+            if mfa_code == 'q':
+                return mfa_code
             int(mfa_code)
             mfa_code[5]
             break
         except:
-            print 'Error, your MFA code must only consist of digits and be at least 6 characters long'
+            printError('Error, your MFA code must only consist of digits and be at least 6 characters long.')
     return mfa_code
 
 #
@@ -428,7 +522,7 @@ def prompt_4_mfa_serial():
         if mfa_serial == '' or re_mfa_serial_format.match(mfa_serial):
             break
         else:
-            print 'Error, your MFA serial must be of the form %s' % mfa_serial_format
+            printError('Error, your MFA serial must be of the form %s' % mfa_serial_format)
     return mfa_serial
 
 #
@@ -442,15 +536,15 @@ def prompt_4_value(question, choices = None, default = None, display_choices = T
     while True:
         if choices and display_indices:
             for c in choices:
-                sys.stderr.write('%3d. %s' % (choices.index(c), c))
+                printError('%3d. %s\n' % (choices.index(c), c))
         if is_question:
             question = question + '? '
-	sys.stderr.write(question)
+            printError(question)
         choice = raw_input()
         if choices:
             user_choices = [item.strip() for item in choice.split(',')]
             if not authorize_list and len(user_choices) > 1:
-                sys.stderr.write('Multiple values are not supported; please enter a single value.')
+                printError('Multiple values are not supported; please enter a single value.')
             else:
                 choice_valid = True
                 if display_indices and int(choice) < len(choices):
@@ -458,7 +552,7 @@ def prompt_4_value(question, choices = None, default = None, display_choices = T
                 else:
                     for c in user_choices:
                         if not c in choices:
-                            sys.stderr.write('Invalid value (%s).' % c)
+                            printError('Invalid value (%s).' % c)
                             choice_valid = False
                             break
                 if choice_valid:
@@ -467,7 +561,7 @@ def prompt_4_value(question, choices = None, default = None, display_choices = T
             if prompt_4_yes_no('Use the default value (' + default + ')'):
                 return default
         elif not choice and required:
-            sys.stderr.write('You cannot leave this parameter empty.')
+            printError('You cannot leave this parameter empty.')
         elif no_confirm or prompt_4_yes_no('You entered "' + choice + '". Is that correct'):
             return choice
 
@@ -476,11 +570,11 @@ def prompt_4_value(question, choices = None, default = None, display_choices = T
 #
 def prompt_4_yes_no(question):
     while True:
-        sys.stderr.write(question + ' (y/n)? ')
+        printError(question + ' (y/n)? ')
         choice = raw_input().lower()
         if choice == 'yes' or choice == 'y':
             return True
         elif choice == 'no' or choice == 'n':
             return False
         else:
-            sys.stderr.write('\'%s\' is not a valid answer. Enter \'yes\'(y) or \'no\'(n).' % choice)
+            printError('\'%s\' is not a valid answer. Enter \'yes\'(y) or \'no\'(n).' % choice)
