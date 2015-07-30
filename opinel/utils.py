@@ -1,8 +1,7 @@
 #!/usr/bin/env python2
 
-# Import third-party packages
+# Import stock packages
 import argparse
-import boto3
 import copy
 from collections import Counter
 from distutils import dir_util
@@ -10,17 +9,19 @@ import json
 import fileinput
 import os
 import re
-import requests
 import shutil
 import sys
 from threading import Event, Thread
 import traceback
-
 # Python2 vs Python3
 try:
     from Queue import Queue
 except ImportError:
     from queue import Queue
+
+# Import third-party packages
+import boto3
+import requests
 
 
 ########################################
@@ -131,6 +132,9 @@ def build_region_list(service, chosen_regions = [], include_gov = False, include
     # h4ck pending botocore issue 339
     with open('AWSUtils/boto-endpoints.json', 'rt') as f:
         boto_endpoints = json.load(f)
+        if not service in boto_endpoints:
+            printError('Error: the service \'%s\' is not supported yet.' % service)
+            return []
         for region in boto_endpoints[service]:
             if (not re_gov_region.match(region) or include_gov) and (not re_cn_region.match(region) or include_cn):
                 boto_regions.append(region)
@@ -193,11 +197,14 @@ def connect_service(service, key_id, secret, session_token, region_name = None, 
         printException(e)
         return None
 
+#
+# Return with priority: profile_name/environment_name/None
+#
 def get_environment_name(args):
     environment_name = None
     if 'profile' in args and args.profile[0] != 'default':
         environment_name = args.profile[0]
-    elif args.environment_name:
+    elif 'environment_name' in args and args.environment_name:
         environment_name = args.environment_name[0]
     return environment_name
 
@@ -225,12 +232,7 @@ def manage_dictionary(dictionary, key, init, callback=None):
             callback(dictionary[key])
     return dictionary
 
-def thread_work(connection_info, service_info, targets, function, display_function = None, service_params = {}, num_threads = 0):
-    if display_function:
-        # Status
-        stop_display_thread = Event()
-        display_thread = Thread(target=display_function, args=(service_info, stop_display_thread,))
-        display_thread.start()
+def thread_work(connection_info, service_info, targets, function, service_params = {}, num_threads = 0):
     # Init queue and threads
     q = Queue(maxsize=0)
     if not num_threads:
@@ -242,8 +244,6 @@ def thread_work(connection_info, service_info, targets, function, display_functi
     for target in targets:
         q.put([service_info, target])
     q.join()
-    if display_function:
-        stop_display_thread.set()
 
 ########################################
 # Credentials read/write functions

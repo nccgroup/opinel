@@ -1,7 +1,17 @@
 #!/usr/bin/env python2
 
-# Import AWS utils
-from AWSUtils.utils import *
+# Import opinel
+from opinel.utils import *
+
+# Import stock packages
+import base64
+from collections import Counter
+import fileinput
+import os
+import re
+import shutil
+import tempfile
+import webbrowser
 
 # Import third-party packages
 _fabulous_available = True
@@ -15,16 +25,6 @@ try:
 except ImportError:
     _fabulous_available = False
     pass
-
-# Import stock packages
-import base64
-from collections import Counter
-import fileinput
-import os
-import re
-import shutil
-import tempfile
-import webbrowser
 
 
 ########################################

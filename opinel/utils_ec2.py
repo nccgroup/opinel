@@ -1,7 +1,7 @@
 #!/usr/bin/env python2
 
-# Import AWS utils
-from AWSUtils.utils import *
+# Import opinel
+from opinel.utils import *
 
 
 ########################################
