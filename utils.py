@@ -142,24 +142,24 @@ def build_region_list(service, chosen_regions = [], include_gov = False, include
 #
 # Check boto version
 #
-def check_boto_version():
+def check_boto3_version():
     printInfo('Checking the version of boto...')
     # TODO: read that from requirements file...
-    min_boto_version = '2.31.1'
-    latest_boto_version = 0
-    if False: #  boto.Version < min_boto_version:
-        printError('Error: the version of boto installed on this system (%s) is too old. Boto version %s or newer is required.' % (boto3.__version__, min_boto_version))
+    min_boto3_version = '1.1.1'
+    latest_boto3_version = 0
+    if boto3.__version__ < min_boto3_version:
+        printError('Error: the version of boto3 installed on this system (%s) is too old. Boto version %s or newer is required.' % (boto3.__version__, min_boto3_version))
         return False
     else:
         try:
             # Warn users who have not the latest version of boto installed
             release_tag_regex = re.compile('(\d+)\.(\d+)\.(\d+)')
-            tags = requests.get('https://api.github.com/repos/boto/boto/tags').json()
+            tags = requests.get('https://api.github.com/repos/boto/boto3/tags').json()
             for tag in tags:
-                if release_tag_regex.match(tag['name']) and tag['name'] > latest_boto_version:
-                    latest_boto_version = tag['name']
-            if False: # boto.Version < latest_boto_version:
-                printError('Warning: the version of boto installed (%s) is not the latest available (%s). Consider upgrading to ensure that all features are enabled.' % (boto3.__version__, latest_boto_version))
+                if release_tag_regex.match(tag['name']) and tag['name'] > latest_boto3_version:
+                    latest_boto3_version = tag['name']
+            if boto3.__version__ < latest_boto3_version:
+                printError('Warning: the version of boto installed (%s) is not the latest available (%s). Consider upgrading to ensure that all features are enabled.' % (boto3.__version__, latest_boto3_version))
         except Exception as e:
             printError('Warning: connection to the Github API failed.')
             printException(e)

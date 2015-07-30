@@ -4,8 +4,6 @@
 from AWSUtils.utils import *
 
 # Import third-party packages
-import boto
-import boto3
 _fabulous_available = True
 try:
     import fabulous.utils
