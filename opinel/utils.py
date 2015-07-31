@@ -542,7 +542,10 @@ def prompt_4_value(question, choices = None, default = None, display_choices = T
         if is_question:
             question = question + '? '
             printError(question)
-        choice = raw_input()
+        try:
+            choice = raw_input()
+        except:
+            choice = input()
         if choices:
             user_choices = [item.strip() for item in choice.split(',')]
             if not authorize_list and len(user_choices) > 1:
@@ -573,7 +576,10 @@ def prompt_4_value(question, choices = None, default = None, display_choices = T
 def prompt_4_yes_no(question):
     while True:
         printError(question + ' (y/n)? ')
-        choice = raw_input().lower()
+        try:
+            choice = raw_input().lower()
+        except:
+            choice = input().lower()
         if choice == 'yes' or choice == 'y':
             return True
         elif choice == 'no' or choice == 'n':
