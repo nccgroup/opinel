@@ -185,48 +185,48 @@ def delete_user(iam_client, user, mfa_serial = None):
         aws_keys = get_all_access_keys(iam_client, user)
         for aws_key in aws_keys:
             try:
-                printInfo('Deleting access key ID %s...' % aws_key['AccessKeyId'])
+                printInfo('Deleting access key ID %s... ' % aws_key['AccessKeyId'], False)
                 iam_client.delete_access_key(AccessKeyId = aws_key['AccessKeyId'], UserName = user)
+                printInfo('Success')
             except Exception as e:
+                printInfo('Failed')
                 printException(e)
-                printError('Failed to delete access key %s' % aws_key['AccessKeyId'])
-                pass
     except Exception as e:
         printException(e)
-        printError('Failed to get access keys for user %s' % user)
-        pass
+        printError('Failed to get access keys for user %s.' % user)
     # Deactivate and delete MFA devices
     try:
         mfa_devices = iam_client.list_mfa_devices(UserName = user)['MFADevices']
         for mfa_device in mfa_devices:
             serial = mfa_device['SerialNumber']
             try:
-                printInfo('Deactivating MFA device %s...' % serial)
+                printInfo('Deactivating MFA device %s... ' % serial, False)
                 iam_client.deactivate_mfa_device(SerialNumber = serial, UserName = user)
+                printInfo('Success')
             except Exception as e:
+                printInfo('Failed')
                 printException(e)
-                printError('Failed to deactivate MFA device %s' % serial)
-                pass
             delete_virtual_mfa_device(iam_client, serial)
         if mfa_serial:
             delete_virtual_mfa_device(iam_client, mfa_serial)
     except Exception as e:
         printException(e)
-        printError('Failed to fetch MFA device serial number for user %s' % user)
+        printError('Failed to fetch MFA device serial number for user %s.' % user)
         pass
     # Remove IAM user from groups
     try:
         groups = iam_client.list_groups_for_user(UserName = user)['Groups']
         for group in groups:
             try:
-                printInfo('Removing user %s from group %s...' % (user, group['GroupName']))
+                printInfo('Removing from group %s... ' % group['GroupName'], False)
                 iam_client.remove_user_from_group(GroupName = group['GroupName'], UserName = user)
+                printInfo('Success')
             except Exception as e:
+                printInfo('Failed')
                 printException(e)
-                printError('Failed to remove user %s from group %s' % (user, group))
     except Exception as e:
         printException(e)
-        printError('Failed to fetch IAM groups for user %s' % user)
+        printError('Failed to fetch IAM groups for user %s.' % user)
         pass
     # Delete login profile
     login_profile = []
@@ -236,14 +236,34 @@ def delete_user(iam_client, user, mfa_serial = None):
         pass
     try:
         if len(login_profile):
-            printInfo('Deleting login profile for user %s...' % user)
+            printInfo('Deleting login profile... ', False)
             iam_client.delete_login_profile(UserName = user)
+            printInfo('Success')
     except Exception as e:
+        printInfo('Failed')
         printException(e)
-        printError('Failed to delete login profile.')
         pass
     # Delete inline policies
-    # TODO TODO TODO
+    try:
+        printInfo('Deleting inline policies... ', False)
+        policies = iam_client.list_user_policies(UserName = user)
+        for policy in policies['PolicyNames']:
+            iam_client.delete_user_policy(UserName = user, PolicyName = policy)
+        printInfo('Success')
+    except Exception as e:
+        printInfo('Failed')
+        printException(e)
+        pass   
+    # Detach managed policies
+    try:
+        printInfo('Detaching managed policies... ', False)
+        policies = iam_client.list_attached_user_policies(UserName = user)
+        for policy in policies['AttachedPolicies']:
+            iam_client.detach_user_policy(UserName = user, PolicyArn = policy['PolicyArn'])
+        printInfo('Success')
+    except Exception as e:
+        printInfo('Failed')
+        printException(e)
     # Delete IAM user
     try:
         iam_client.delete_user(UserName = user)
