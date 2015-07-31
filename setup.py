@@ -10,11 +10,10 @@ ROOT = os.path.dirname(__file__)
 VERSION = __import__(NAME).__version__
 
 # Requirements
-requirements = []
-with open('requirements.txt') as f:
-    for r in f.readlines():
-        requirements.append(r.strip())
-print(requirements)
+requirements = [
+    'boto3>=1.1.0,<1.2.0',
+    'requests>=2.4.0,<3.0.0'
+]
 
 # Setup
 setup(
