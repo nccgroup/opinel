@@ -130,7 +130,9 @@ def printGeneric(out, msg, newLine = True):
 def build_region_list(service, chosen_regions = [], include_gov = False, include_cn = False):
     boto_regions = []
     # h4ck pending botocore issue 339
-    with open('AWSUtils/boto-endpoints.json', 'rt') as f:
+    package_dir, foo = os.path.split(__file__)
+    boto_endpoints_file = os.path.join(package_dir, 'data', 'boto-endpoints.json')
+    with open(boto_endpoints_file, 'rt') as f:
         boto_endpoints = json.load(f)
         if not service in boto_endpoints:
             printError('Error: the service \'%s\' is not supported yet.' % service)
