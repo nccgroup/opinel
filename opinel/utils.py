@@ -35,8 +35,8 @@ re_mfa_serial = re.compile(r'aws_mfa_serial')
 re_session_token = re.compile(r'aws_session_token')
 mfa_serial_format = r'^arn:aws:iam::\d+:mfa/[a-zA-Z0-9\+=,.@_-]+$'
 re_mfa_serial_format = re.compile(mfa_serial_format)
-re_gov_region = re.compile(r'(.*)?-gov-(.*)?')
-re_cn_region = re.compile(r'^cn-(.*)?')
+re_gov_region = re.compile(r'(.*?)-gov-(.*?)')
+re_cn_region = re.compile(r'^cn-(.*?)')
 
 aws_credentials_file = os.path.join(os.path.join(os.path.expanduser('~'), '.aws'), 'credentials')
 aws_credentials_file_tmp = os.path.join(os.path.join(os.path.expanduser('~'), '.aws'), 'credentials.tmp')
