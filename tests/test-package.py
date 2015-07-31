@@ -20,4 +20,4 @@ class TestUtilsClass:
                 requirement = re.sub(r',$', '', requirement).replace('\'', '').strip()
                 if requirement:
                     requirements_from_setup.append(requirement)
-        assert cmp(requirements_from_file, requirements_from_setup) == 0
+        assert len(requirements_from_file) == len(requirements_from_setup) == len(set(requirements_from_file) & set(requirements_from_setup))
