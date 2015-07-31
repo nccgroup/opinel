@@ -541,7 +541,7 @@ def prompt_4_value(question, choices = None, default = None, display_choices = T
                 printError('%3d. %s\n' % (choices.index(c), c))
         if is_question:
             question = question + '? '
-            printError(question)
+        printError(question)
         try:
             choice = raw_input()
         except:
