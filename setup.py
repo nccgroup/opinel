@@ -10,16 +10,17 @@ ROOT = os.path.dirname(__file__)
 VERSION = __import__(NAME).__version__
 
 # Requirements
-requirements = [
-    'boto3>=1.1.0,<1.2.0',
-    'requests>=2.4.0,<3.0.0'
-]
+requirements = []
+with open('requirements.txt') as f:
+    for r in f.readlines():
+        requirements.append(r.strip())
 
 # Setup
 setup(
     name=NAME,
     version=VERSION,
     description='Code shared between Scout2 and AWS-recipes.',
+    loong_description=open('README.rst').read(),
     author='l01cd3v',
     author_email='l01cd3v@gmail.com',
     url='https://github.com/iSECPartners/opinel',
