@@ -1,10 +1,14 @@
 #!/usr/bin/env python2
 
+# Opinel version
+from opinel import __version__ as OPINEL_VERSION
+
 # Import stock packages
 import argparse
 import copy
 from collections import Counter
 from distutils import dir_util
+from distutils.version import StrictVersion
 import json
 import fileinput
 import os
@@ -66,19 +70,31 @@ def add_common_argument(parser, default_args, argument_name):
                             dest='dry_run',
                             default=False,
                             action='store_true',
-                            help='Executes read-only actions (check status, get*, list*...)')
+                            help='Executes read-only actions (check status, describe*, get*, list*...)')
     elif argument_name == 'profile':
         parser.add_argument('--profile',
                             dest='profile',
                             default= [ 'default' ],
                             nargs='+',
                             help='Name of the profile')
-    elif argument_name == 'region':
-        parser.add_argument('--region',
-                            dest='region',
-                            default=[ ],
+    elif argument_name == 'regions':
+        parser.add_argument('--regions',
+                            dest='regions',
+                            default=[],
                             nargs='+',
                             help='Name of regions to run the tool in, defaults to all')
+    elif argument_name == 'with-gov':
+        parser.add_argument('--with-gov',
+                            dest='with_gov',
+                            default=False,
+                            action='store_true',
+                            help='Include the Government regions')
+    elif argument_name == 'with-cn':
+        parser.add_argument('--with-cn',
+                            dest='with_cn',
+                            default=False,
+                            action='store_true',
+                            help='Include the China regions')
     else:
         raise Exception('Invalid parameter name %s' % argument_name)
 
@@ -138,12 +154,11 @@ def build_region_list(service, chosen_regions = [], include_gov = False, include
             printError('Error: the service \'%s\' is not supported yet.' % service)
             return []
         for region in boto_endpoints[service]:
-            if (not re_gov_region.match(region) or include_gov) and (not re_cn_region.match(region) or include_cn):
-                boto_regions.append(region)
+            boto_regions.append(region)
     if len(chosen_regions):
         return list((Counter(boto_regions) & Counter(chosen_regions)).elements())
     else:
-        return boto_regions
+        return [region for region in boto_regions if (not re_gov_region.match(region) or include_gov) and (not re_cn_region.match(region) or include_cn)]
 
 #
 # Check boto version
@@ -171,6 +186,12 @@ def check_boto3_version():
             printException(e)
     return True
 
+def check_opinel_version(min_version):
+    if StrictVersion(OPINEL_VERSION) < StrictVersion(min_version):
+        printError('Error: the version of opinel installed on this system(%s) is too old. You need at least version %s to run this tool.' % (OPINEL_VERSION, min_version))
+        return False
+    return True
+
 #
 # Connect to any service
 #
@@ -195,7 +216,6 @@ def connect_service(service, key_id, secret, session_token, region_name = None, 
                 infoMessage = infoMessage + ' in %s' % region_name
             printInfo(infoMessage + '...')
     except Exception as e:
-        printError('Error: could not connect to %s.' % service)
         printException(e)
         return None
 
@@ -290,8 +310,7 @@ def read_creds(profile_name, csv_file = None, mfa_serial_arg = None, mfa_code = 
         mfa_serial = mfa_serial_arg
     # If we don't have valid creds by now, throw an exception
     if key_id == None or secret == None:
-        printError('Error: could not find AWS credentials. Use the --help option for more information.\n')
-        raise Exception
+        printError('Error: could not find AWS credentials. Use the --help option for more information.')
     return key_id, secret, token
 
 #
