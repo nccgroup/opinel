@@ -12,18 +12,20 @@ from opinel.utils import *
 # Add an STS-related argument to a recipe
 #
 def add_sts_argument(parser, argument_name):
-    if argument_name == 'mfa_serial':
-        parser.add_argument('--mfa_serial',
+    if argument_name == 'mfa-serial':
+        parser.add_argument('--mfa-serial',
                             dest='mfa_serial',
                             default=[ None ],
                             nargs='+',
                             help='MFA device\'s serial number')
-    elif argument_name == 'mfa_code':
-        parser.add_argument('--mfa_code',
+    elif argument_name == 'mfa-code':
+        parser.add_argument('--mfa-code',
                             dest='mfa_code',
                             default=[ None ],
                             nargs='+',
                             help='MFA code')
+    else:
+        raise Exception('Invalid parameter name: %s' % argument_name)
 
 
 ########################################
