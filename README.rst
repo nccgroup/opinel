@@ -9,7 +9,7 @@ opinel
 Introduction
 ************
 
-opinel is the Python package used by `Scout2`_ and `AWS-Recipes_`.
+opinel is the Python package used by `Scout2`_ and `AWS-Recipes`_.
 
 ************
 Installation
@@ -31,3 +31,4 @@ Install from source:
 
 .. _Scout2: https://github.com/iSECPartners/Scout2
 .. _AWS-Recipes: https://github.com/iSECPartners/AWS-Recipes
+.. _pip: https://pip.pypa.io/en/stable/index.html
