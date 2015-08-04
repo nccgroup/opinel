@@ -30,4 +30,4 @@ Install from source:
     $ python setup.py install
 
 .. _Scout2: https://github.com/iSECPartners/Scout2
-.. _AWS-recipes: https://github.com/iSECPartners/AWS-Recipes
+.. _AWS-Recipes: https://github.com/iSECPartners/AWS-Recipes
