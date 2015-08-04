@@ -2,10 +2,12 @@
 opinel
 ######
 
-opinel 0.10.0 released on 04-Aug-2015
-
 .. image:: https://travis-ci.org/iSECPartners/opinel.svg?branch=master
         :target: https://travis-ci.org/iSECPartners/opinel
+
+************
+Introduction
+************
 
 opinel is the Python package used by `Scout2`_ and `AWS-Recipes_`.
 
