@@ -357,6 +357,14 @@ def get_all_access_keys(iam_client, user_name):
     return iam_client.list_access_keys(UserName = user_name)['AccessKeyMetadata']
 
 #
+# Get AWS account ID of authenticated user
+#
+def get_aws_account_id(iam_client):
+    result = iam_client.list_users(MaxItems = 1)
+    user_arn = result['Users'][0]['Arn']
+    return user_arn.split(':')[4]
+
+#
 # Get category group name based on IAM user name
 #
 def get_category_group_from_user_name(user, category_groups, category_regex):
