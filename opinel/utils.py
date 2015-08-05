@@ -254,17 +254,17 @@ def manage_dictionary(dictionary, key, init, callback=None):
             callback(dictionary[key])
     return dictionary
 
-def thread_work(connection_info, service_info, targets, function, service_params = {}, num_threads = 0):
+def thread_work(targets, function, params = {}, num_threads = 0):
     # Init queue and threads
     q = Queue(maxsize=0)
     if not num_threads:
         num_threads = len(targets)
     for i in range(num_threads):
-        worker = Thread(target=function, args=(connection_info, q, service_params))
+        worker = Thread(target=function, args=(q, params))
         worker.setDaemon(True)
         worker.start()
     for target in targets:
-        q.put([service_info, target])
+        q.put(target)
     q.join()
 
 ########################################
