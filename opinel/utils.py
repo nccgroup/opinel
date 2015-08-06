@@ -1,4 +1,3 @@
-#!/usr/bin/env python2
 
 # Opinel version
 from opinel import __version__ as OPINEL_VERSION
@@ -233,18 +232,19 @@ def get_environment_name(args):
 #
 # Handle truncated responses
 #
-def handle_truncated_responses(callback, callback_args, items_name):
-    marker_value = None
-    items = []
+def handle_truncated_response(callback, params, entities):
+    results = {}
+    for entity in entities:
+        results[entity] = []
     while True:
-        if marker_value != None:
-            callback_args['Marker'] = marker_value
-        result = callback(**callback_args)
-        marker_value = result['Marker'] if bool(result['IsTruncated']) == True else None
-        items = items + result[items_name]
-        if marker_value is None:
+        response = callback(**params)
+        for entity in entities:
+            results[entity] = results[entity] + response[entity]
+        if 'Marker' in response and response['Marker']:
+            params['Marker'] = response['Marker']
+        else:
             break
-    return items
+    return results
 
 def manage_dictionary(dictionary, key, init, callback=None):
     if not str(key) in dictionary:

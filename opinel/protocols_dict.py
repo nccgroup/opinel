@@ -1,4 +1,3 @@
-#!/usr/bin/env python2
 
 # Generated on February 12, 2014
 # Values from http://www.iana.org/assignments/protocol-numbers/protocol-numbers.xhtml
