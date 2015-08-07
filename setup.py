@@ -20,7 +20,7 @@ setup(
     name=NAME,
     version=VERSION,
     description='Code shared between Scout2 and AWS-recipes.',
-    loong_description=open('README.rst').read(),
+    long_description=open('README.rst').read(),
     author='l01cd3v',
     author_email='l01cd3v@gmail.com',
     url='https://github.com/iSECPartners/opinel',
