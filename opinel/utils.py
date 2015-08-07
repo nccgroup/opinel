@@ -375,9 +375,9 @@ def read_creds_from_ec2_instance_metadata():
         if has_role.status_code == 200:
             iam_role = has_role.text
             credentials = requests.get('http://169.254.169.254/latest/meta-data/iam/security-credentials/%s/' % iam_role.strip()).json()
-                key_id = credentials['AccessKeyId']
-                secret = credentials['SecretAccessKey']
-                token = credentials['Token']
+            key_id = credentials['AccessKeyId']
+            secret = credentials['SecretAccessKey']
+            token = credentials['Token']
     except Exception as e:
         pass
     return key_id, secret, token
