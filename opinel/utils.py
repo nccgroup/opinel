@@ -219,14 +219,14 @@ def connect_service(service, key_id, secret, session_token, region_name = None, 
         return None
 
 #
-# Return with priority: profile_name/environment_name/None
+# Return with priority: profile_name/environment_name/['default']
 #
 def get_environment_name(args):
-    environment_name = None
+    environment_name = [ 'default' ]
     if 'profile' in args and args.profile[0] != 'default':
-        environment_name = args.profile[0]
+        environment_name = args.profile
     elif 'environment_name' in args and args.environment_name:
-        environment_name = args.environment_name[0]
+        environment_name = args.environment_name
     return environment_name
 
 #
