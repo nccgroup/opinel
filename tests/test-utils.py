@@ -3,6 +3,7 @@
 from opinel.utils import *
 
 # Import stock packages
+import argparse
 import json
 import os
 import shutil
@@ -28,11 +29,20 @@ class TestUtilsClass:
     #
     # Unit tests for get_environment_name()
     #
-#    def test_get_environment_name(self):
-#        assert get_environment_name({}) == None
-#        assert get_environment_name({'profile': ['foo']}) == 'foo'
-#        assert get_environment_name({'environment_name': ['foo']}) == 'foo'
-#        assert get_environment_name({'profile': ['foo'], 'environment_name': ['bar']}) == 'foo'
+    def test_get_environment_name(self):
+        # No profile and no environment name : returns a one-item list with 'default'
+        args = argparse.Namespace()
+        assert get_environment_name(args) == ['default']
+        # Profile and no environment name : profile
+        args.profile = ['profile']
+        assert get_environment_name(args) == ['profile']
+        args.profile = ['a', 'b', 'c']
+        assert get_environment_name(args) == ['a', 'b', 'c']
+        # Environment name has priority
+        args.environment_name = ['env']
+        assert get_environment_name(args) == ['env']
+        args.environment_name = ['d', 'e', 'f']
+        assert get_environment_name(args) ==  ['d', 'e', 'f']
 
     #
     #
@@ -52,9 +62,6 @@ class TestUtilsClass:
         assert test['a'] == []
         # TODO: add callback test case
 
-    #
-    #
-    #
 
 #def init_parser():
 #def add_common_argument(parser, default_args, argument_name):

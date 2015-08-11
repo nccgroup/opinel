@@ -73,7 +73,7 @@ def add_common_argument(parser, default_args, argument_name):
     elif argument_name == 'profile':
         parser.add_argument('--profile',
                             dest='profile',
-                            default= [ 'default' ],
+                            default= ['default'],
                             nargs='+',
                             help='Name of the profile')
     elif argument_name == 'regions':
@@ -219,14 +219,14 @@ def connect_service(service, key_id, secret, session_token, region_name = None, 
         return None
 
 #
-# Return with priority: profile_name/environment_name/['default']
+# Return with priority: environment_name/profile_name/['default']
 #
 def get_environment_name(args):
-    environment_name = [ 'default' ]
-    if 'profile' in args and args.profile[0] != 'default':
-        environment_name = args.profile
-    elif 'environment_name' in args and args.environment_name:
+    environment_name = ['default']
+    if 'environment_name' in args and args.environment_name:
         environment_name = args.environment_name
+    elif 'profile' in args and args.profile:
+        environment_name = args.profile
     return environment_name
 
 #
