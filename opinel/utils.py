@@ -246,6 +246,17 @@ def handle_truncated_response(callback, params, entities):
             break
     return results
 
+#
+# Load data from json file
+#
+def load_data(data_file, key_name = None):
+    package_dir, foo = os.path.split(__file__)
+    with open(os.path.join(package_dir, 'data', data_file)) as f:
+        data = json.load(f)
+    if key_name:
+        data = data[key_name]
+    return data
+
 def manage_dictionary(dictionary, key, init, callback=None):
     if not str(key) in dictionary:
         dictionary[str(key)] = init
