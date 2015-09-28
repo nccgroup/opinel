@@ -52,6 +52,12 @@ def add_iam_argument(parser, default_args, argument_name):
                             default=set_profile_default(default_args, 'common_groups', []),
                             nargs='+',
                             help='Groups that all IAM users should belong to')
+    elif argument_name == 'csv-credentials':
+        parser.add_argument('--csv-credentials',
+                    dest='csv_credentials',
+                    default=[ None ],
+                    nargs='+',
+                    help='Read credentials from a CSV file')
     else:
         raise Exception('Invalid parameter name: %s' % argument_name)
 
