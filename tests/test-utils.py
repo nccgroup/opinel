@@ -62,6 +62,16 @@ class TestUtilsClass:
         assert test['a'] == []
         # TODO: add callback test case
 
+    #
+    # Unit tests for load_data()
+    #
+    def test_load_data(self):
+        test = load_data('protocols.json', 'protocols')
+        assert type(test) == dict
+        assert test['1'] == 'ICMP'
+        test = load_data('tests/data/protocols.json', 'protocols', True)
+        assert type(test) == dict
+        assert test['-2'] == 'TEST'
 
 #def init_parser():
 #def add_common_argument(parser, default_args, argument_name):
