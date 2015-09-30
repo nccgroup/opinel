@@ -8,6 +8,7 @@ from opinel import __version__ as OPINEL_VERSION
 import argparse
 import copy
 from collections import Counter
+import datetime
 from distutils import dir_util
 from distutils.version import StrictVersion
 import json
