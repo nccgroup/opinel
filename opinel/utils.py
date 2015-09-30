@@ -1,3 +1,5 @@
+# Import future print
+from __future__ import print_function
 
 # Opinel version
 from opinel import __version__ as OPINEL_VERSION
@@ -94,6 +96,12 @@ def add_common_argument(parser, default_args, argument_name):
                             default=False,
                             action='store_true',
                             help='Include the China regions')
+    elif argument_name == 'force':
+        parser.add_argument('--force',
+                            dest='force_write',
+                            default=False,
+                            action='store_true',
+                            help='Overwrite existing files')
     else:
         raise Exception('Invalid parameter name %s' % argument_name)
 
@@ -133,6 +141,38 @@ def printGeneric(out, msg, newLine = True):
     if newLine == True:
         out.write('\n')
     out.flush()
+
+########################################
+##### File write functions
+########################################
+
+#
+# Creates/Modifies file and saves python object as JSON
+#
+def save_blob_as_json(filename, blob, force_write, debug):
+    try:
+        if prompt_4_overwrite(filename, force_write):
+            with open(filename, 'wt') as f:
+                write_data_to_file(f, blob, force_write, debug)
+    except Exception as e:
+        printException(e)
+        pass
+
+#
+# Dumps python object as JSON in opened file handler
+#
+def write_data_to_file(f, data, force_write, debug):
+    print('%s' % json.dumps(data, indent = 4 if debug else None, separators=(',', ': '), sort_keys=True, cls=CustomJSONEncoder), file = f)
+
+#
+# JSON encoder class
+#
+class CustomJSONEncoder(json.JSONEncoder):
+    def default(self, o):
+        if type(o) == datetime.datetime:
+            return str(o)
+        else:
+            return o.__dict__
 
 
 ########################################
@@ -232,7 +272,7 @@ def get_environment_name(args):
 #
 # Handle truncated responses
 #
-def handle_truncated_response(callback, params, entities):
+def handle_truncated_response(callback, params, marker_name, entities):
     results = {}
     for entity in entities:
         results[entity] = []
@@ -240,8 +280,8 @@ def handle_truncated_response(callback, params, entities):
         response = callback(**params)
         for entity in entities:
             results[entity] = results[entity] + response[entity]
-        if 'Marker' in response and response['Marker']:
-            params['Marker'] = response['Marker']
+        if marker_name in response and response[marker_name]:
+            params[marker_name] = response[marker_name]
         else:
             break
     return results
@@ -559,6 +599,15 @@ def prompt_4_mfa_serial():
         else:
             printError('Error, your MFA serial must be of the form %s' % mfa_serial_format)
     return mfa_serial
+
+#
+# Prompt for file overwrite
+#
+def prompt_4_overwrite(filename, force_write):
+    # Do not prompt if the file does not exist or force_write is set
+    if not os.path.exists(filename) or force_write:
+        return True
+    return prompt_4_yes_no('File \'{}\' already exists. Do you want to overwrite it'.format(filename))
 
 #
 # Prompt for a value
