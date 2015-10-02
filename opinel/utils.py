@@ -13,6 +13,7 @@ from distutils import dir_util
 from distutils.version import StrictVersion
 import json
 import fileinput
+import netaddr
 import os
 import re
 import shutil
