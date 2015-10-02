@@ -144,8 +144,30 @@ def printGeneric(out, msg, newLine = True):
     out.flush()
 
 ########################################
-##### File write functions
+##### File read/write functions
 ########################################
+
+#
+# Returns the list of IP prefixes from an ip-ranges file
+#
+def read_ip_ranges(filename, local_file = True, conditions = [], ip_only = False):
+    targets = []
+    data = load_data(filename, 'prefixes', local_file)
+    for d in data:
+        condition_passed = True
+        for condition in conditions:
+            condition_passed = pass_condition(d[condition[0]], condition[1], condition[2])
+            if not condition_passed:
+                break
+        if condition_passed:
+            targets.append(d)
+    if ip_only:
+        ips = []
+        for t in targets:
+            ips.append(t['ip_prefix'])
+        return ips
+    else:
+        return targets
 
 #
 # Creates/Modifies file and saves python object as JSON
@@ -158,6 +180,16 @@ def save_blob_as_json(filename, blob, force_write, debug):
     except Exception as e:
         printException(e)
         pass
+
+#
+# Creates/Modifies an ip-range-XXX.json file
+#
+def save_ip_ranges(profile_name, prefixes, force_write, debug):
+    filename = 'ip-ranges-%s.json' % profile_name
+    ip_ranges = {}
+    ip_ranges['createDate'] = datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
+    ip_ranges['prefixes'] = prefixes
+    save_blob_as_json(filename, ip_ranges, force_write, debug)
 
 #
 # Dumps python object as JSON in opened file handler
@@ -669,3 +701,65 @@ def prompt_4_yes_no(question):
             return False
         else:
             printError('\'%s\' is not a valid answer. Enter \'yes\'(y) or \'no\'(n).' % choice)
+
+
+########################################
+##### Test functions
+########################################
+
+#
+# Generic tests
+#
+def pass_condition(b, test, a):
+    if test == 'inSubnets':
+        grant = netaddr.IPNetwork(b)
+        for c in a:
+            known_subnet = netaddr.IPNetwork(c)
+            if grant in known_subnet:
+                return True
+        return False
+    if test == 'notInSubnets':
+        grant = netaddr.IPNetwork(b)
+        for c in a:
+            known_subnet = netaddr.IPNetwork(c)
+            if grant in known_subnet:
+                return False
+        return True
+    elif test == 'containAtLeastOneOf':
+        if not type(b) == list:
+            b = [ b ]
+        for c in b:
+            if c in a:
+                return True
+        return False
+    elif test == 'equal':
+        return a == b
+    elif test == 'notEqual':
+        return a != b
+    elif test == 'empty':
+        return ((type(b) == dict and b == {}) or (type(b) == list and b == []) or (type(b) == list and b == [None]))
+    elif test == 'notEmpty':
+        return not ((type(b) == dict and b == {}) or (type(b) == list and b == []) or(type(b) == list and b == [None]))
+    elif test == 'match':
+        return re.match(a, b) != None
+    elif test == 'notMatch':
+        return re.match(a, b) == None
+    elif test == 'null':
+        return b == None
+    elif test == 'notNull':
+        return b != None
+    elif test == 'dateOlderThan':
+        try:
+            age = (datetime.datetime.today() - dateutil.parser.parse(b).replace(tzinfo=None)).days
+            return age > a
+        except Exception as e:
+            # Failure means an invalid date, meaning no activity
+            return True
+    elif test == 'true':
+        return bool(b)
+    elif test == 'notTrue':
+        return not bool(b)
+    else:
+        # Throw an exception here actually...
+        printError('Error: unknown test case %s' % test)
+    return False

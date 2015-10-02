@@ -8,11 +8,10 @@ import json
 import os
 import shutil
 
-
 #
 # Test methods from utils.py
 #
-class TestUtilsClass:  
+class TestUtilsClass:
 
     #
     # Unit tests for build_region_list()
@@ -72,6 +71,60 @@ class TestUtilsClass:
         test = load_data('tests/data/protocols.json', 'protocols', True)
         assert type(test) == dict
         assert test['-2'] == 'TEST'
+        # TODO : add test case without key name (both local and not local)
+
+    #
+    # Unit tests for read_ip_ranges()
+    #
+    def test_read_ip_ranges(self):
+        successful_read_ip_ranges_runs = True
+        test_cases = [
+                # Read from local file, no conditions, all data
+                {
+                    'filename': 'tests/data/ip-ranges-1.json',
+                    'local_file': True,
+                    'conditions': [],
+                    'ip_only': False,
+                    'results': 'tests/results/read_ip_ranges/ip-ranges-1a.json'
+                },
+                # Read from local file, no conditions, IPs only
+                {
+                    'filename': 'tests/data/ip-ranges-1.json',
+                    'local_file': True,
+                    'conditions': [],
+                    'ip_only': True,
+                    'results': 'tests/results/read_ip_ranges/ip-ranges-1b.json'
+                },
+                # Read from local file, with conditions, IPs only
+                {
+                    'filename': 'tests/data/ip-ranges-1.json',
+                    'local_file': True,
+                    'conditions': [["field_a", "equal", "a1"]],
+                    'ip_only': True,
+                    'results': 'tests/results/read_ip_ranges/ip-ranges-1c.json'
+                },
+                # Read from global file, with conditions
+                {
+                    'filename': 'ip-ranges.json',
+                    'local_file': False,
+                    'conditions': [["ip_prefix", "equal", "23.20.0.0/14"]],
+                    'ip_only': False,
+                    'results': 'tests/results/read_ip_ranges/ip-ranges-a.json'
+                }
+        ]
+        for test_case in test_cases:
+            results = test_case.pop('results')
+            test_results = read_ip_ranges(**test_case)
+            known_results = load_data(results, local_file = True)
+            if cmp(test_results, known_results) != 0:
+                successful_read_ip_ranges_runs = False
+        assert(successful_read_ip_ranges_runs)
+
+    #
+    # Unit tests for save_ip_ranges()
+    #
+#    def test_save_ip_ranges(self):
+#    save_ip_ranges(profile_name, prefixes, force_write, debug):
 
 #def init_parser():
 #def add_common_argument(parser, default_args, argument_name):
