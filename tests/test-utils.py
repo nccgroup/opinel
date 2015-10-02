@@ -13,6 +13,9 @@ import shutil
 #
 class TestUtilsClass:
 
+    def cmp(self, a, b):
+        return (a > b) - (a < b)
+
     #
     # Unit tests for build_region_list()
     #
@@ -116,7 +119,7 @@ class TestUtilsClass:
             results = test_case.pop('results')
             test_results = read_ip_ranges(**test_case)
             known_results = load_data(results, local_file = True)
-            if cmp(test_results, known_results) != 0:
+            if self.cmp(test_results, known_results) != 0:
                 successful_read_ip_ranges_runs = False
         assert(successful_read_ip_ranges_runs)
 
