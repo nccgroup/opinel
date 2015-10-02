@@ -13,6 +13,9 @@ import shutil
 #
 class TestUtilsClass:
 
+    #
+    # Implement cmp() for tests in Python3
+    #
     def cmp(self, a, b):
         return (a > b) - (a < b)
 
