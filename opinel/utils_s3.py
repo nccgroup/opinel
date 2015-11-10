@@ -17,6 +17,12 @@ def add_s3_argument(parser, default_args, argument_name):
                             default=[],
                             nargs='+',
                             help='Name of S3 buckets that the script will iterate through.')
+    elif argument_name == 'skipped-bucket-name':
+        parser.add_argument('--skipped-bucket-name',
+                            dest='skipped_bucket_name',
+                            default=[],
+                            nargs='+',
+                            help='Name of S3 buckets that the script will skip when iterating through all buckets.')
     else:
         raise Exception('Invalid parameter name: %s' % argument_name)
 
