@@ -4,6 +4,23 @@ from opinel.utils import *
 
 
 ########################################
+##### S3-related arguments
+########################################
+
+#
+# Add an S3-related argument to a recipe
+#
+def add_s3_argument(parser, default_args, argument_name):
+    if argument_name == 'bucket-name':
+        parser.add_argument('--bucket-name',
+                            dest='bucket_name',
+                            default=[],
+                            nargs='+',
+                            help='Name of S3 buckets that the script will iterate through.')
+    else:
+        raise Exception('Invalid parameter name: %s' % argument_name)
+
+########################################
 ##### Helpers
 ########################################
 
