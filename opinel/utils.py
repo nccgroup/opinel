@@ -44,6 +44,7 @@ mfa_serial_format = r'^arn:aws:iam::\d+:mfa/[a-zA-Z0-9\+=,.@_-]+$'
 re_mfa_serial_format = re.compile(mfa_serial_format)
 re_gov_region = re.compile(r'(.*?)-gov-(.*?)')
 re_cn_region = re.compile(r'^cn-(.*?)')
+re_opinel = re.compile(r'^opinel>=([0-9.]+),<([0-9.]+).*')
 
 aws_credentials_file = os.path.join(os.path.join(os.path.expanduser('~'), '.aws'), 'credentials')
 aws_credentials_file_tmp = os.path.join(os.path.join(os.path.expanduser('~'), '.aws'), 'credentials.tmp')
@@ -259,11 +260,20 @@ def check_boto3_version():
             printException(e)
     return True
 
-def check_opinel_version(min_version):
+def check_opinel_version(min_version, max_version = None):
     if StrictVersion(OPINEL_VERSION) < StrictVersion(min_version):
         printError('Error: the version of opinel installed on this system(%s) is too old. You need at least version %s to run this tool.' % (OPINEL_VERSION, min_version))
         return False
     return True
+
+def get_opinel_requirement():
+    requirements_file = os.path.join(os.getcwd(), 'requirements.txt')
+    with open(requirements_file, 'rt') as f:
+        for line in f.readlines():
+            opinel_requirements = re_opinel.match(line)
+            if opinel_requirements:
+                return opinel_requirements.groups()
+    return None
 
 #
 # Connect to any service
