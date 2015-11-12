@@ -430,13 +430,13 @@ def read_creds_from_aws_credentials_file(profile_name, credentials_file = aws_cr
                         profile_found = False
                 if profile_found:
                     if re_access_key.match(line):
-                        key_id = line.split("=")[1].strip(" ")
+                        key_id = line.split("=")[1].strip()
                     elif re_secret_key.match(line):
-                        secret = line.split("=")[1].strip(" ")
+                        secret = line.split("=")[1].strip()
                     elif re_mfa_serial.match(line):
-                        mfa_serial = (line.split(' ')[2]).rstrip()
+                        mfa_serial = (line.split('=')[1]).strip()
                     elif re_session_token.match(line):
-                        security_token = (line.split(' ')[2]).rstrip()
+                        security_token = (line.split('=')[1]).strip()
     except Exception as e:
         pass
     return key_id, secret, mfa_serial, security_token
