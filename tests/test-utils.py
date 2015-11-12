@@ -126,6 +126,30 @@ class TestUtilsClass:
                 successful_read_ip_ranges_runs = False
         assert(successful_read_ip_ranges_runs)
 
+
+    #
+    # Unit tests for load_data()
+    #
+    def test_read_creds_from_aws_credentials_file(self): # profile_name, credentials_file = aws_credentials_file):
+        test_cases = [
+            {'profile_name': 'l01cd3v-1', 'credentials_file': 'tests/data/credentials'},
+            {'profile_name': 'l01cd3v-2', 'credentials_file': 'tests/data/credentials'},
+            {'profile_name': 'l01cd3v-3', 'credentials_file': 'tests/data/credentials'},
+            {'profile_name': 'l01cd3v-4', 'credentials_file': 'tests/data/credentials'}
+        ]
+        results = [
+            ('AKIAXXXXXXXXXXXXXXX1', 'deadbeefdeadbeefdeadbeefdeadbeef11111111', 'arn:aws:iam::123456789111:mfa/l01cd3v', None),
+            ('AKIAXXXXXXXXXXXXXXX2', 'deadbeefdeadbeefdeadbeefdeadbeef22222222', 'arn:aws:iam::123456789222:mfa/l01cd3v', None),
+            ('ASIAXXXXXXXXXXXXXXX3', 'deadbeefdeadbeefdeadbeefdeadbeef33333333', None, 'deadbeef333//////////ZGVhZGJlZWZkZWFkYmVlZg==ZGVhZGJlZWZkZWFkYmVlZg==ZGVhZGJlZWZkZWFkYmVlZg==ZGVhZGJlZWZkZWFkYmVlZg==ZGVhZGJlZWZkZWFkYmVlZg==ZGVhZGJlZWZkZWFkYmVlZg==/ZGVhZGJlZWZkZWFkYmVlZg==+ZGVhZGJlZWZkZWFkYmVlZg==ZGVhZGJlZWZkZWFkYmVlZg==ZGVhZGJlZWZkZWFkYmVlZg==/ZGVhZGJlZWZkZWFkYmVlZg==ZGVhZGJlZWZkZWFkYmVlZg=='),
+            ('ASIAXXXXXXXXXXXXXXX4', 'deadbeefdeadbeefdeadbeefdeadbeef44444444', None, 'deadbeef444//////////ZGVhZGJlZWZkZWFkYmVlZg==ZGVhZGJlZWZkZWFkYmVlZg==ZGVhZGJlZWZkZWFkYmVlZg==ZGVhZGJlZWZkZWFkYmVlZg==ZGVhZGJlZWZkZWFkYmVlZg==ZGVhZGJlZWZkZWFkYmVlZg==/ZGVhZGJlZWZkZWFkYmVlZg==+ZGVhZGJlZWZkZWFkYmVlZg==ZGVhZGJlZWZkZWFkYmVlZg==ZGVhZGJlZWZkZWFkYmVlZg==/ZGVhZGJlZWZkZWFkYmVlZg==ZGVhZGJlZWZkZWFkYmVlZg==')
+        ]
+        for test_case, result in zip(test_cases, results):
+            key_id, secret, mfa_serial, session_token = read_creds_from_aws_credentials_file(**test_case)
+            assert(key_id == result[0])
+            assert(secret == result[1])
+            assert(mfa_serial == result[2])
+            assert(session_token == result[3])
+
     #
     # Unit tests for save_ip_ranges()
     #
