@@ -770,6 +770,10 @@ def pass_condition(b, test, a):
         return bool(b)
     elif test == 'notTrue':
         return not bool(b)
+    elif test == 'withKey':
+        return a in b
+    elif test == 'withoutKey':
+        return not a in b
     else:
         # Throw an exception here actually...
         printError('Error: unknown test case %s' % test)
