@@ -399,7 +399,7 @@ def init_iam_group_category_regex(category_groups, arg_category_regex):
 # List an IAM user's access keys
 #
 def list_access_keys(iam_client, user_name):
-    keys = handle_truncated_responses(iam_client.list_access_keys, {'UserName':user_name, 'MaxItems': 1}, 'AccessKeyMetadata')
-    printInfo('User \'%s\' currently has %s access keys:' % (user_name, len(keys)))
-    for key in keys:
+    keys = handle_truncated_response(iam_client.list_access_keys, {'UserName':user_name}, 'Marker', ['AccessKeyMetadata'])
+    printInfo('User \'%s\' currently has %s access keys:' % (user_name, len(keys['AccessKeyMetadata'])))
+    for key in keys['AccessKeyMetadata']:
         printInfo('\t%s (%s)' % (key['AccessKeyId'], key['Status']))
