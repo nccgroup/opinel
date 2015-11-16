@@ -756,9 +756,9 @@ def pass_condition(b, test, a):
     elif test == 'notMatch':
         return re.match(a, b) == None
     elif test == 'null':
-        return b == None
+        return ((b == None) or (type(b) == str and b == 'None'))
     elif test == 'notNull':
-        return b != None
+        return not ((b == None) or (type(b) == str and b == 'None'))
     elif test == 'dateOlderThan':
         try:
             age = (datetime.datetime.today() - dateutil.parser.parse(b).replace(tzinfo=None)).days
