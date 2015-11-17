@@ -18,3 +18,21 @@ def connect_ec2(key_id, secret, session_token,  region_name):
 #
 def connect_elb(key_id, secret, session_token, region_name):
     return connect_service('elb', key_id, secret, session_token, region_name)
+
+
+########################################
+##### Helpers
+########################################
+
+#
+# Get name from tags
+#
+def get_name(local, remote, default_attribute):
+    name_found = False
+    if 'Tags' in remote:
+        for tag in remote['Tags']:
+            if tag['Key'] == 'Name':
+                local['Name'] = tag['Value']
+                name_found = True
+    if not name_found:
+        local['Name'] = remote[default_attribute]
