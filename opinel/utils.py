@@ -105,6 +105,18 @@ def add_common_argument(parser, default_args, argument_name):
                             default=False,
                             action='store_true',
                             help='Overwrite existing files')
+    elif argument_name == 'ip-ranges':
+        parser.add_argument('--ip-ranges',
+                            dest='ip_ranges',
+                            default=[],
+                            nargs='+',
+                            help='Config file(s) that contain your known IP ranges.')
+    elif argument_name == 'ip-ranges-key-name':
+        parser.add_argument('--ip-ranges-key-name',
+                            dest='ip_ranges_key_name',
+                            default=[],
+                            nargs='+',
+                            help='Name of the key containing the display name of a known CIDR.')
     else:
         raise Exception('Invalid parameter name %s' % argument_name)
 
