@@ -183,7 +183,7 @@ def enable_mfa(iam_client, user, qrcode_file = None):
 #
 # Delete IAM user
 #
-def delete_user(iam_client, user, mfa_serial = None):
+def delete_user(iam_client, user, mfa_serial = None, keep_user = False, terminated_groups = []):
     printInfo('Deleting user %s...' % user)
     # Delete access keys
     try:
@@ -258,7 +258,7 @@ def delete_user(iam_client, user, mfa_serial = None):
     except Exception as e:
         printInfo('Failed')
         printException(e)
-        pass   
+        pass
     # Detach managed policies
     try:
         printInfo('Detaching managed policies... ', False)
@@ -271,8 +271,12 @@ def delete_user(iam_client, user, mfa_serial = None):
         printException(e)
     # Delete IAM user
     try:
-        iam_client.delete_user(UserName = user)
-        printInfo('User %s deleted.' % user)
+        if not keep_user:
+            iam_client.delete_user(UserName = user)
+            printInfo('User %s deleted.' % user)
+        else:
+            for group in terminated_groups:
+                add_user_to_group(iam_client, group, user)
     except Exception as e:
         printException(e)
         printError('Failed to delete user.')
@@ -288,7 +292,7 @@ def delete_virtual_mfa_device(iam_client, mfa_serial):
     except Exception as e:
         printException(e)
         printError('Failed to delete MFA device %s' % mfa_serial)
-        pass   
+        pass
 
 #
 # Display MFA QR code

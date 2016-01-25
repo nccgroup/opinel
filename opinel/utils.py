@@ -9,6 +9,7 @@ import argparse
 import copy
 from collections import Counter
 import datetime
+import dateutil.parser
 from distutils import dir_util
 from distutils.version import StrictVersion
 import json
@@ -45,6 +46,8 @@ re_mfa_serial_format = re.compile(mfa_serial_format)
 re_gov_region = re.compile(r'(.*?)-gov-(.*?)')
 re_cn_region = re.compile(r'^cn-(.*?)')
 re_opinel = re.compile(r'^opinel>=([0-9.]+),<([0-9.]+).*')
+re_port_range = re.compile(r'(\d+)\-(\d+)')
+re_single_port = re.compile(r'(\d+)')
 
 aws_credentials_file = os.path.join(os.path.join(os.path.expanduser('~'), '.aws'), 'credentials')
 aws_credentials_file_tmp = os.path.join(os.path.join(os.path.expanduser('~'), '.aws'), 'credentials.tmp')
@@ -99,6 +102,13 @@ def add_common_argument(parser, default_args, argument_name):
                             default=False,
                             action='store_true',
                             help='Include the China regions')
+    elif argument_name == 'vpc':
+        parser.add_argument('--vpc',
+                            dest='vpc',
+                            default=[],
+                            nargs='+',
+                            help='Name of VPC to run the tool in, defaults to all')
+
     elif argument_name == 'force':
         parser.add_argument('--force',
                             dest='force_write',
@@ -144,6 +154,10 @@ def configPrintException(enable):
 ########################################
 ##### Output functions
 ########################################
+
+def printDebug(msg):
+    if verbose_exceptions:
+        printGeneric(sys.stdout, msg)
 
 def printError(msg, newLine = True):
     printGeneric(sys.stderr, msg, newLine)
@@ -748,22 +762,47 @@ def pass_condition(b, test, a):
             if grant in known_subnet:
                 return False
         return True
+    elif test == 'containOneMatching':
+        if not type(b) == list:
+            b = [ b]
+        for c in b:
+            if re.match(a, c) != None:
+                return True
+        return False            
     elif test == 'containAtLeastOneOf':
         if not type(b) == list:
             b = [ b ]
         for c in b:
+            if type(c):
+                c = str(c)
             if c in a:
                 return True
         return False
+    elif test == 'containNoneOf':
+        if not type(b) == list:
+            b = [ b ]
+        for c in b:
+            if c in a:
+                return False
+        return True
     elif test == 'equal':
-        return a == b
+        if type(b) == int:
+            return int(a) == int(b)
+        else:
+            return a == b
     elif test == 'notEqual':
         return a != b
+    elif test == 'lessThan':
+        return int(b) < int(a)
+    elif test == 'moreThan':
+        return int(b) > int(a)
     elif test == 'empty':
         return ((type(b) == dict and b == {}) or (type(b) == list and b == []) or (type(b) == list and b == [None]))
     elif test == 'notEmpty':
         return not ((type(b) == dict and b == {}) or (type(b) == list and b == []) or(type(b) == list and b == [None]))
     elif test == 'match':
+        if type(b) != str:
+            b = str(b)
         return re.match(a, b) != None
     elif test == 'notMatch':
         return re.match(a, b) == None
@@ -771,21 +810,49 @@ def pass_condition(b, test, a):
         return ((b == None) or (type(b) == str and b == 'None'))
     elif test == 'notNull':
         return not ((b == None) or (type(b) == str and b == 'None'))
+    elif test == 'datePriorTo':
+        b = dateutil.parser.parse(str(b)).replace(tzinfo=None)
+        a = dateutil.parser.parse(str(a)).replace(tzinfo=None)
+        return b < a
     elif test == 'dateOlderThan':
         try:
             age = (datetime.datetime.today() - dateutil.parser.parse(b).replace(tzinfo=None)).days
-            return age > a
+            return age > int(a)
+        except Exception as e:
+            # Failure means an invalid date, meaning no activity
+            return True
+    elif test == 'dateNotOlderThan':
+        try:
+            age = (datetime.datetime.today() - dateutil.parser.parse(b).replace(tzinfo=None)).days
+            return age < int(a)
         except Exception as e:
             # Failure means an invalid date, meaning no activity
             return True
     elif test == 'true':
-        return bool(b)
-    elif test == 'notTrue':
-        return not bool(b)
+        return b in [True, 'True', 'true']
+    elif test == 'notTrue' or test == 'false':
+        return b not in [True, 'True', 'true']
     elif test == 'withKey':
         return a in b
     elif test == 'withoutKey':
         return not a in b
+    elif test == 'inRange':
+        range_found = re_port_range.match(b)
+        if range_found:
+            p1 = int(range_found.group(1))
+            p2 = int(range_found.group(2))
+            if int(a) in range(int(range_found.group(1)), int(range_found.group(2))):
+                return True
+        else:
+            port_found = re_single_port.match(b)
+            if port_found and a == port_found.group(1):
+                return True        
+    elif test == 'lengthLessThan':
+        return len(b) < int(a)
+    elif test == 'lengthMoreThan':
+        return len(b) > int(a)
+    elif test == 'lengthEqual':
+        return len(b) == int(a)
     else:
         # Throw an exception here actually...
         printError('Error: unknown test case %s' % test)
