@@ -786,11 +786,12 @@ def pass_condition(b, test, a):
                 return False
         return True
     elif test == 'equal':
-        if type(b) == int:
-            return int(a) == int(b)
-        else:
-            return a == b
+        if type(b) != str:
+            b = str(b)
+        return a == b
     elif test == 'notEqual':
+        if type(b) != str:
+            b = str(b)
         return a != b
     elif test == 'lessThan':
         return int(b) < int(a)
