@@ -740,3 +740,120 @@ def prompt_4_yes_no(question):
         else:
             printError('\'%s\' is not a valid answer. Enter \'yes\'(y) or \'no\'(n).' % choice)
 
+
+#
+# Pass one condition?
+# Needs to be here as used when loading IP ranges (Scout2 + various recipes)
+#
+def pass_condition(b, test, a):
+    if test == 'inSubnets':
+        grant = netaddr.IPNetwork(b)
+        for c in a:
+            known_subnet = netaddr.IPNetwork(c)
+            if grant in known_subnet:
+                return True
+        return False
+    if test == 'notInSubnets':
+        grant = netaddr.IPNetwork(b)
+        for c in a:
+            known_subnet = netaddr.IPNetwork(c)
+            if grant in known_subnet:
+                return False
+        return True
+    elif test == 'containOneMatching':
+        if not type(b) == list:
+            b = [ b]
+        for c in b:
+            if re.match(a, c) != None:
+                return True
+        return False
+    elif test == 'containAtLeastOneOf':
+        if not type(b) == list:
+            b = [ b ]
+        for c in b:
+            if type(c):
+                c = str(c)
+            if c in a:
+                return True
+        return False
+    elif test == 'containNoneOf':
+        if not type(b) == list:
+            b = [ b ]
+        for c in b:
+            if c in a:
+                return False
+        return True
+    elif test == 'equal':
+        if type(b) != str:
+            b = str(b)
+        return a == b
+    elif test == 'notEqual':
+        if type(b) != str:
+            b = str(b)
+        return a != b
+    elif test == 'lessThan':
+        return int(b) < int(a)
+    elif test == 'moreThan':
+        return int(b) > int(a)
+    elif test == 'empty':
+        return ((type(b) == dict and b == {}) or (type(b) == list and b == []) or (type(b) == list and b == [None]))
+    elif test == 'notEmpty':
+        return not ((type(b) == dict and b == {}) or (type(b) == list and b == []) or(type(b) == list and b == [None]))
+    elif test == 'match':
+        if type(b) != str:
+            b = str(b)
+        return re.match(a, b) != None
+    elif test == 'notMatch':
+        return re.match(a, b) == None
+    elif test == 'null':
+        return ((b == None) or (type(b) == str and b == 'None'))
+    elif test == 'notNull':
+        return not ((b == None) or (type(b) == str and b == 'None'))
+    elif test == 'datePriorTo':
+        b = dateutil.parser.parse(str(b)).replace(tzinfo=None)
+        a = dateutil.parser.parse(str(a)).replace(tzinfo=None)
+        return b < a
+    elif test == 'dateOlderThan':
+        try:
+            age = (datetime.datetime.today() - dateutil.parser.parse(str(b)).replace(tzinfo=None)).days
+            return age > int(a)
+        except Exception as e:
+            # Failure means an invalid date, meaning no activity
+            printException(e)
+            return True
+    elif test == 'dateNotOlderThan':
+        try:
+            age = (datetime.datetime.today() - dateutil.parser.parse(b).replace(tzinfo=None)).days
+            return age < int(a)
+        except Exception as e:
+            # Failure means an invalid date, meaning no activity
+            return True
+    elif test == 'true':
+        return b in [True, 'True', 'true']
+    elif test == 'notTrue' or test == 'false':
+        return b not in [True, 'True', 'true']
+    elif test == 'withKey':
+        return a in b
+    elif test == 'withoutKey':
+        return not a in b
+    elif test == 'inRange':
+        range_found = re_port_range.match(b)
+        if range_found:
+            p1 = int(range_found.group(1))
+            p2 = int(range_found.group(2))
+            if int(a) in range(int(range_found.group(1)), int(range_found.group(2))):
+                return True
+        else:
+            port_found = re_single_port.match(b)
+            if port_found and a == port_found.group(1):
+                return True
+    elif test == 'lengthLessThan':
+        return len(b) < int(a)
+    elif test == 'lengthMoreThan':
+        return len(b) > int(a)
+    elif test == 'lengthEqual':
+        return len(b) == int(a)
+    else:
+        # Throw an exception here actually...
+        printError('Error: unknown test case %s' % test)
+    return False
