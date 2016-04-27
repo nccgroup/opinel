@@ -41,6 +41,7 @@ re_access_key = re.compile(r'aws_access_key_id')
 re_secret_key = re.compile(r'aws_secret_access_key')
 re_mfa_serial = re.compile(r'aws_mfa_serial')
 re_session_token = re.compile(r'aws_session_token')
+re_security_token = re.compile(r'aws_security_token')
 mfa_serial_format = r'^arn:aws:iam::\d+:mfa/[a-zA-Z0-9\+=,.@_-]+$'
 re_mfa_serial_format = re.compile(mfa_serial_format)
 re_gov_region = re.compile(r'(.*?)-gov-(.*?)')
@@ -575,6 +576,7 @@ def write_creds_to_aws_credentials_file(profile_name, key_id = None, secret = No
     profile_found = False
     profile_ever_found = False
     session_token_written = False
+    security_token_written = False
     mfa_serial_written = False
     # Create an empty file if target does not exist
     if not os.path.isfile(aws_credentials_file):
@@ -591,6 +593,9 @@ def write_creds_to_aws_credentials_file(profile_name, key_id = None, secret = No
                     if session_token and not session_token_written:
                         print('aws_session_token = %s' % session_token)
                         session_token_written = True
+                    if session_token and not security_token_written:
+                        print('aws_security_token = %s' % session_token)
+                        security_token_written = True
                     if mfa_serial and not mfa_serial_written:
                         print('aws_mfa_serial = %s' % mfa_serial)
                         mfa_serial_written = True
@@ -607,6 +612,9 @@ def write_creds_to_aws_credentials_file(profile_name, key_id = None, secret = No
             elif re_session_token.match(line) and session_token:
                 print('aws_session_token = %s' % session_token)
                 session_token_written = True
+            elif re_security_token.match(line) and session_token:
+                print('aws_security_token = %s' % session_token)
+                security_token_written = True
             else:
                 print(line.rstrip())
         else:
