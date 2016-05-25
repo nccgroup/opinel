@@ -49,8 +49,9 @@ re_opinel = re.compile(r'^opinel>=([0-9.]+),<([0-9.]+).*')
 re_port_range = re.compile(r'(\d+)\-(\d+)')
 re_single_port = re.compile(r'(\d+)')
 
-aws_credentials_file = os.path.join(os.path.join(os.path.expanduser('~'), '.aws'), 'credentials')
-aws_credentials_file_tmp = os.path.join(os.path.join(os.path.expanduser('~'), '.aws'), 'credentials.tmp')
+aws_config_dir = os.path.join(os.path.expanduser('~'), '.aws')
+aws_credentials_file = os.path.join(aws_config_dir, 'credentials')
+aws_credentials_file_tmp = os.path.join(aws_config_dir, 'credentials.tmp')
 
 
 ########################################
@@ -576,6 +577,9 @@ def write_creds_to_aws_credentials_file(profile_name, key_id = None, secret = No
     profile_ever_found = False
     session_token_written = False
     mfa_serial_written = False
+    # Create the .aws folder if needed
+    if not os.path.isdir(aws_config_dir):
+        os.mkdir(aws_config_dir)
     # Create an empty file if target does not exist
     if not os.path.isfile(aws_credentials_file):
         open(aws_credentials_file, 'a').close()
