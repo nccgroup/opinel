@@ -23,6 +23,12 @@ def add_sts_argument(parser, argument_name):
                             default=[ None ],
                             nargs='+',
                             help='MFA code')
+    elif argument_name == 'external-id':
+        parser.add_argument('--external-id',
+                            dest='external_id',
+                            default=[ None ],
+                            nargs='+',
+                            help='External ID')
     else:
         raise Exception('Invalid parameter name: %s' % argument_name)
 
@@ -34,17 +40,26 @@ def add_sts_argument(parser, argument_name):
 #
 # Get role credentials
 #
-def assume_role(sts_client, role_arn, role_session_name, mfa_serial = None, mfa_code = None):
+def assume_role(sts_client, role_arn, role_session_name, mfa_serial = None, mfa_code = None, external_id = None):
+    sts_args = {
+      'RoleArn': role_arn,
+      'RoleSessionName': role_session_name
+    }
+
     if mfa_serial and mfa_code:
-        sts_response = sts_client.assume_role(RoleArn = role_arn, RoleSessionName = role_session_name, SerialNumber = mfa_serial, TokenCode = mfa_code)
-    else:
-        sts_response = sts_client.assume_role(RoleArn = role_arn, RoleSessionName = role_session_name)
+      sts_args['TokenCode'] = mfa_code
+      sts_args['SerialNumber'] = mfa_serial
+
+    if external_id:
+      sts_args['ExternalId'] = external_id
+
+    sts_response = sts_client.assume_role(**sts_args)
     return sts_response['Credentials']['AccessKeyId'], sts_response['Credentials']['SecretAccessKey'], sts_response['Credentials']['SessionToken']
 
 #
 # Fetch role credentials and store them in a file
 #
-def assume_role_and_save_in_credentials(profile_name, role_arn, role_session_name, mfa_serial_arg, mfa_code):
+def assume_role_and_save_in_credentials(profile_name, role_arn, role_session_name, mfa_serial_arg, mfa_code, external_id = None):
 
     # Init
     key_id = secret = mfa_serial = session_token = None
@@ -70,7 +85,7 @@ def assume_role_and_save_in_credentials(profile_name, role_arn, role_session_nam
         mfa_code = prompt_4_mfa_code()
 
     sts_client = connect_sts(key_id, secret, session_token)
-    role_key_id, role_secret, role_session_token = assume_role(sts_client, role_arn, role_session_name, mfa_serial, mfa_code)
+    role_key_id, role_secret, role_session_token = assume_role(sts_client, role_arn, role_session_name, mfa_serial, mfa_code, external_id)
 
     # Save session credentials
     role_profile = profile_name.replace('-nomfa', '') + '-' + role_session_name
