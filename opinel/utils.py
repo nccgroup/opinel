@@ -29,6 +29,7 @@ except ImportError:
 
 # Import third-party packages
 import boto3
+from iampoliciesgonewild import get_actions_from_statement
 import requests
 
 
@@ -772,6 +773,11 @@ def pass_condition(b, test, a):
             if grant in known_subnet:
                 return False
         return True
+    elif test == 'containAction':
+        if type(b) != dict:
+            b = json.loads(b)
+        actions = get_actions_from_statement(b)
+        return True if a.lower() in actions else False
     elif test == 'containOneMatching':
         if not type(b) == list:
             b = [ b]
