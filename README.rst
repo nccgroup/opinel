@@ -2,8 +2,8 @@
 opinel
 ######
 
-.. image:: https://travis-ci.org/iSECPartners/opinel.svg?branch=master
-        :target: https://travis-ci.org/iSECPartners/opinel
+.. image:: https://travis-ci.org/nccgroup/opinel.svg?branch=master
+        :target: https://travis-ci.org/nccgroup/opinel
 
 ************
 Introduction
