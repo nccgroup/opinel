@@ -32,6 +32,8 @@ setup(
     },
     include_package_data=True,
     install_requires=requirements,
+    dependency_links = [
+    'https://github.com/l01cd3v/iampoliciesgonewild/tarball/master#egg=iampoliciesgonewild' ],
     license='GNU General Public License v2 (GPLv2)',
     classifiers=[
         'Development Status :: 4 - Beta',
