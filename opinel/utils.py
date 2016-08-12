@@ -3,6 +3,8 @@ from __future__ import print_function
 
 # Opinel version
 from opinel import __version__ as OPINEL_VERSION
+from opinel.load_data import load_data
+from opinel.iampoliciesgonewild import get_actions_from_statement
 
 # Import stock packages
 import argparse
@@ -29,7 +31,6 @@ except ImportError:
 
 # Import third-party packages
 import boto3
-from iampoliciesgonewild import get_actions_from_statement
 import requests
 
 
@@ -253,6 +254,8 @@ def build_region_list(service, chosen_regions = [], include_gov = False, include
     boto_endpoints_file = os.path.join(package_dir, 'data', 'boto-endpoints.json')
     with open(boto_endpoints_file, 'rt') as f:
         boto_endpoints = json.load(f)
+        # Of course things aren't that easy...
+        service = 'ec2containerservice' if service == 'ecs' else service
         if not service in boto_endpoints:
             printError('Error: the service \'%s\' is not supported yet.' % service)
             return []
@@ -361,19 +364,8 @@ def handle_truncated_response(callback, params, marker_name, entities):
     return results
 
 #
-# Load data from json file
+# Create key in dictionary if it doesn't exist
 #
-def load_data(data_file, key_name = None, local_file = False):
-    if local_file:
-        src_dir = os.getcwd()
-    else:
-        src_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'data')
-    with open(os.path.join(src_dir, data_file)) as f:
-        data = json.load(f)
-    if key_name:
-        data = data[key_name]
-    return data
-
 def manage_dictionary(dictionary, key, init, callback=None):
     if not str(key) in dictionary:
         dictionary[str(key)] = init
@@ -382,6 +374,9 @@ def manage_dictionary(dictionary, key, init, callback=None):
             callback(dictionary[key])
     return dictionary
 
+#
+# Multithread generic helper
+#
 def thread_work(targets, function, params = {}, num_threads = 0):
     # Init queue and threads
     q = Queue(maxsize=0)
