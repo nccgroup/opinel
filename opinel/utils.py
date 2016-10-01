@@ -823,8 +823,12 @@ def pass_condition(b, test, a):
         return a != b
     elif test == 'lessThan':
         return int(b) < int(a)
+    elif test == 'lessOrEqual':
+        return int(b) <= int(a)
     elif test == 'moreThan':
         return int(b) > int(a)
+    elif test == 'moreOrEqual':
+        return int(b) >= int(a)
     elif test == 'empty':
         return ((type(b) == dict and b == {}) or (type(b) == list and b == []) or (type(b) == list and b == [None]))
     elif test == 'notEmpty':
