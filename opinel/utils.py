@@ -56,7 +56,6 @@ aws_config_dir = os.path.join(os.path.expanduser('~'), '.aws')
 aws_credentials_file = os.path.join(aws_config_dir, 'credentials')
 aws_credentials_file_tmp = os.path.join(aws_config_dir, 'credentials.tmp')
 
-
 ########################################
 ##### Argument parser
 ########################################
@@ -773,9 +772,18 @@ def pass_condition(b, test, a):
             b = json.loads(b)
         actions = get_actions_from_statement(b)
         return True if a.lower() in actions else False
+    elif test == 'isCrossAccount':
+        if type(b) != list:
+            b = [ b ]
+        for c in b:
+            if c == a or re.match(r'arn:aws:iam:.*?:%s:.*' % a, c):
+                continue
+            else:
+                return True
+        return False
     elif test == 'containOneMatching':
         if not type(b) == list:
-            b = [ b]
+            b = [ b ]
         for c in b:
             if re.match(a, c) != None:
                 return True
@@ -787,6 +795,15 @@ def pass_condition(b, test, a):
             if type(c):
                 c = str(c)
             if c in a:
+                return True
+        return False
+    elif test == 'containAtLeastOneDifferentFrom':
+        if not type(b) == list:
+            b = [ b ]
+        if not type(a) == list:
+            a = [ a ]
+        for c in b:
+            if c not in a:
                 return True
         return False
     elif test == 'containNoneOf':
