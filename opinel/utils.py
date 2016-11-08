@@ -491,8 +491,6 @@ def init_sts_session(profile_name, credentials, duration = 28800, session_name =
     # Move long-lived credentials if needed
     if not profile_name.endswith('-nomfa') and credentials['AccessKeyId'].startswith('AKIA'):
         write_creds_to_aws_credentials_file(profile_name + '-nomfa', credentials)
-    else:
-        print('ASIA key !!')
     # Save STS values in the .aws/credentials file
     key_id = sts_response['Credentials']['AccessKeyId']
     secret = sts_response['Credentials']['SecretAccessKey']
@@ -538,13 +536,9 @@ def read_creds(profile_name, csv_file = None, mfa_serial_arg = None, mfa_code = 
             if not expiration or expiration < current or credentials['AccessKeyId'] == None:
                 credentials = read_creds(source_profile)
                 credentials = assume_role(profile_name, credentials, role_arn, role_session_name)
-            else:
-                print(str(credentials))
         # Read from ~/.aws/credentials
         else:
             credentials = read_creds_from_aws_credentials_file(profile_name)
-            print('A')
-            print(str(credentials))
             if credentials['SessionToken']:
                 if 'Expiration' in credentials and credentials['Expiration']:
                     expiration = dateutil.parser.parse(credentials['Expiration'])
@@ -562,10 +556,7 @@ def read_creds(profile_name, csv_file = None, mfa_serial_arg = None, mfa_code = 
                 first_sts_session = True
             printInfo('Force init: %s' % force_init)
             if force_init:
-                print('A!!')
                 credentials = read_creds_from_aws_credentials_file(profile_name if first_sts_session else '%s-nomfa' % profile_name)
-                print('B!!')
-                print(str(credentials))
                 if mfa_serial_arg: 
                     credentials['SerialNumber'] = mfa_serial_arg
                 if mfa_code:
