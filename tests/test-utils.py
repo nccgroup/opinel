@@ -52,7 +52,7 @@ class TestUtilsClass:
     #
     #
     #
-#def handle_truncated_responses(callback, callback_args, items_name):
+    #def handle_truncated_responses(callback, callback_args, items_name):
 
 
     #
@@ -128,9 +128,9 @@ class TestUtilsClass:
 
 
     #
-    # Unit tests for load_data()
+    # Unit tests for read_creds_from_aws_credentials_file()
     #
-    def test_read_creds_from_aws_credentials_file(self): # profile_name, credentials_file = aws_credentials_file):
+    def test_read_creds_from_aws_credentials_file(self):
         test_cases = [
             {'profile_name': 'l01cd3v-1', 'credentials_file': 'tests/data/credentials'},
             {'profile_name': 'l01cd3v-2', 'credentials_file': 'tests/data/credentials'},
@@ -144,11 +144,19 @@ class TestUtilsClass:
             ('ASIAXXXXXXXXXXXXXXX4', 'deadbeefdeadbeefdeadbeefdeadbeef44444444', None, 'deadbeef444//////////ZGVhZGJlZWZkZWFkYmVlZg==ZGVhZGJlZWZkZWFkYmVlZg==ZGVhZGJlZWZkZWFkYmVlZg==ZGVhZGJlZWZkZWFkYmVlZg==ZGVhZGJlZWZkZWFkYmVlZg==ZGVhZGJlZWZkZWFkYmVlZg==/ZGVhZGJlZWZkZWFkYmVlZg==+ZGVhZGJlZWZkZWFkYmVlZg==ZGVhZGJlZWZkZWFkYmVlZg==ZGVhZGJlZWZkZWFkYmVlZg==/ZGVhZGJlZWZkZWFkYmVlZg==ZGVhZGJlZWZkZWFkYmVlZg==')
         ]
         for test_case, result in zip(test_cases, results):
-            key_id, secret, mfa_serial, session_token = read_creds_from_aws_credentials_file(**test_case)
-            assert(key_id == result[0])
-            assert(secret == result[1])
-            assert(mfa_serial == result[2])
-            assert(session_token == result[3])
+            credentials = read_creds_from_aws_credentials_file(**test_case)
+            assert(credentials['AccessKeyId'] == result[0])
+            assert(credentials['SecretAccessKey'] == result[1])
+            assert(credentials['SerialNumber'] == result[2])
+            assert(credentials['SessionToken'] == result[3])
+
+
+    #
+    # Unit tests for read_creds()
+    #    
+
+
+
 
     #
     # Unit tests for save_ip_ranges()

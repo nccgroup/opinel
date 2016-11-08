@@ -116,8 +116,8 @@ def add_user_to_common_group(iam_client, current_groups, common_groups, user, fo
 #
 # Connect to IAM
 #
-def connect_iam(key_id, secret, session_token, silent = False):
-    return connect_service('IAM', key_id, secret, session_token, silent)
+def connect_iam(credentials, silent = False):
+    return connect_service('IAM', credentials, silent)
 
 #
 # Create default groups

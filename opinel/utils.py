@@ -42,8 +42,11 @@ re_profile_name = re.compile(r'\[(.*)\]')
 re_access_key = re.compile(r'aws_access_key_id')
 re_secret_key = re.compile(r'aws_secret_access_key')
 re_mfa_serial = re.compile(r'aws_mfa_serial')
+re_role_arn = re.compile(r'role_arn')
 re_session_token = re.compile(r'aws_session_token')
 re_security_token = re.compile(r'aws_security_token')
+re_expiration = re.compile(r'expiration')
+re_source_profile = re.compile(r'source_profile')
 mfa_serial_format = r'^arn:aws:iam::\d+:mfa/[a-zA-Z0-9\+=,.@_-]+$'
 re_mfa_serial_format = re.compile(mfa_serial_format)
 re_gov_region = re.compile(r'(.*?)-gov-(.*?)')
@@ -55,6 +58,7 @@ re_single_port = re.compile(r'(\d+)')
 aws_config_dir = os.path.join(os.path.expanduser('~'), '.aws')
 aws_credentials_file = os.path.join(aws_config_dir, 'credentials')
 aws_credentials_file_tmp = os.path.join(aws_config_dir, 'credentials.tmp')
+aws_config_file = os.path.join(aws_config_dir, 'config')
 
 ########################################
 ##### Argument parser
@@ -132,6 +136,38 @@ def add_common_argument(parser, default_args, argument_name):
                             help='Name of the key containing the display name of a known CIDR.')
     else:
         raise Exception('Invalid parameter name %s' % argument_name)
+
+#
+# Add an STS-related argument to a recipe
+#
+def add_sts_argument(parser, argument_name):
+    if argument_name == 'mfa-serial':
+        parser.add_argument('--mfa-serial',
+                            dest='mfa_serial',
+                            default=None,
+                            help='MFA device\'s serial number')
+    elif argument_name == 'mfa-code':
+        parser.add_argument('--mfa-code',
+                            dest='mfa_code',
+                            default=None,
+                            help='MFA code')
+    elif argument_name == 'external-id':
+        parser.add_argument('--external-id',
+                            dest='external_id',
+                            default=None,
+                            help='External ID')
+    elif argument_name == 'role-arn':
+        parser.add_argument('--role-arn',
+                            dest='role_arn',
+                            default=None,
+                            help='Role to be assumed.')
+    elif argument_name == 'source-profile':
+        parser.add_argument('--source-profile',
+                            dest='source_profile',
+                            default=None,
+                            help='Profile to use when assuming role.')
+    else:
+        raise Exception('Invalid parameter name: %s' % argument_name)
 
 init_parser()
 add_common_argument(parser, {}, 'debug')
@@ -309,14 +345,14 @@ def get_opinel_requirement():
 #
 # Connect to any service
 #
-def connect_service(service, key_id, secret, session_token, region_name = None, config = None, silent = False):
+def connect_service(service, credentials, region_name = None, config = None, silent = False):
     try:
         client_params = {}
         client_params['service_name'] = service.lower()
         session_params = {}
-        session_params['aws_access_key_id'] = key_id
-        session_params['aws_secret_access_key'] = secret
-        session_params['aws_session_token'] = session_token
+        session_params['aws_access_key_id'] = credentials['AccessKeyId']
+        session_params['aws_secret_access_key'] = credentials['SecretAccessKey']
+        session_params['aws_session_token'] = credentials['SessionToken']
         if region_name:
             client_params['region_name'] = region_name
             session_params['region_name'] = region_name
@@ -394,58 +430,162 @@ def thread_work(targets, function, params = {}, num_threads = 0):
 ########################################
 
 #
-# Fetch STS credentials
+# Assume role and save credentials
 #
-def init_sts_session(key_id, secret, mfa_serial = None, mfa_code = None):
-    if not mfa_serial:
-        # Prompt for MFA serial
-        mfa_serial = prompt_4_mfa_serial()
-        save_no_mfa_credentials = True
-    if not mfa_code:
-        # Prompt for MFA code
-        mfa_code = prompt_4_mfa_code()
-    # Fetch session token and set the duration to 8 hours
-    sts_client = boto3.session.Session(key_id, secret).client('sts')
-    sts_response = sts_client.get_session_token(SerialNumber = mfa_serial, TokenCode = mfa_code, DurationSeconds = 28800)
-    return sts_response['Credentials']['AccessKeyId'], sts_response['Credentials']['SecretAccessKey'], sts_response['Credentials']['SessionToken']
+def assume_role(role_name, credentials, role_arn, role_session_name):
+    # Connect to STS
+    sts_client = connect_service('sts', credentials, silent = False)
+    # Set required arguments for assume role call
+    sts_args = {
+      'RoleArn': role_arn,
+      'RoleSessionName': role_session_name
+    }
+    # MFA used ?
+    if 'mfa_serial' in credentials and 'mfa_code' in credentials:
+      sts_args['TokenCode'] = credentials['TokenCode']
+      sts_args['SerialNumber'] = credentials['SerialNumber']
+    # External ID used ?
+    if 'ExternalId' in credentials and credentials['ExternalId']:
+      sts_args['ExternalId'] = credentials['ExternalId']
+    # Assume the role
+    sts_response = sts_client.assume_role(**sts_args)
+    credentials = sts_response['Credentials']
+    cached_credentials_filename = get_cached_credentials_filename(role_name, role_arn)
+    with open(cached_credentials_filename, 'wt+') as f:
+        write_data_to_file(f, sts_response, True, False)
+    return credentials
 
 #
-# Read credentials from anywhere
+# Construct filepath for cached credentials (AWS CLI scheme)
 #
-def read_creds(profile_name, csv_file = None, mfa_serial_arg = None, mfa_code = None):
-    key_id = None
-    secret = None
-    token = None
-    if csv_file:
-        key_id, secret, mfa_serial = read_creds_from_csv(csv_file)
+def get_cached_credentials_filename(role_name, role_arn):
+    filename_p1 = role_name.replace('/','-')
+    filename_p2 = role_arn.replace('/', '-').replace(':', '_')
+    return os.path.join(os.path.join(os.path.expanduser('~'), '.aws'), 'cli/cache/%s--%s.json' % (filename_p1, filename_p2))
+
+#
+# Create a dictionary with all the necessary keys set to "None"
+#
+def init_creds():
+    return { 'AcccessKeyId': None, 'SecretAccessKey': None, 'SessionToken': None, 'Expiration': None, 'SerialNumber': None, 'TokenCode': None }
+
+#
+# Fetch STS credentials
+#
+def init_sts_session(profile_name, credentials, duration = 28800, session_name = None):
+    # Set STS arguments
+    sts_args = {
+        'DurationSeconds': duration
+    }
+    # Prompt for MFA code if MFA serial present
+    if credentials['SerialNumber']:
+        if not credentials['TokenCode']:
+            credentials['TokenCode'] = prompt_4_mfa_code()
+            if credentials['TokenCode'] == 'q':
+                credentials['SerialNumber'] = None
+        sts_args['TokenCode'] = credentials['TokenCode']
+        sts_args['SerialNumber'] = credentials['SerialNumber']
+    # Init session
+    sts_client = boto3.session.Session(credentials['AccessKeyId'], credentials['SecretAccessKey']).client('sts')
+    sts_response = sts_client.get_session_token(**sts_args)
+    # Move long-lived credentials if needed
+    if not profile_name.endswith('-nomfa') and credentials['AccessKeyId'].startswith('AKIA'):
+        write_creds_to_aws_credentials_file(profile_name + '-nomfa', credentials)
     else:
+        print('ASIA key !!')
+    # Save STS values in the .aws/credentials file
+    key_id = sts_response['Credentials']['AccessKeyId']
+    secret = sts_response['Credentials']['SecretAccessKey']
+    token = sts_response['Credentials']['SessionToken']
+    expiration = sts_response['Credentials']['Expiration']
+    write_creds_to_aws_credentials_file(profile_name, sts_response['Credentials'])
+    return sts_response['Credentials']
+
+#
+# Read credentials from anywhere (CSV, Environment, Instance metadata, config/credentials)
+#
+def read_creds(profile_name, csv_file = None, mfa_serial_arg = None, mfa_code = None, force_init = False, role_session_name = 'opinel'):
+    first_sts_session = False
+    expiration = None
+    credentials = init_creds()
+    if csv_file:
+        # Read credentials from a CSV file that was provided
+        credentials['AccessKeyId'], credentials['SecretAccessKey'], credentials['SerialNumber'] = read_creds_from_csv(csv_file)
+    elif profile_name == 'default':
+        # Try reading credentials from environment variables (Issue #11) if the profile name is 'default'
+        credentials['AccessKeyId'], credentials['SecretAccessKey'], credentials['SessionToken'] = read_creds_from_environment_variables()
+    else:
+        # Read from EC2 instance metadata
+        credentials['AccessKeyId'], credentials['SecretAccessKey'], credentials['SessionToken'] = read_creds_from_ec2_instance_metadata()
+    if not credentials['AccessKeyId'] and not csv_file:
+        # Lookup if a role is defined in ~/.aws/config
+        role_arn, source_profile = read_profile_from_aws_config_file(profile_name)
+        if role_arn and source_profile:
+            # Lookup cached credentials
+            try:
+                cached_credentials_filename = get_cached_credentials_filename(profile_name, role_arn)
+                with open(cached_credentials_filename, 'rt') as f:
+                    assume_role_data = json.load(f)
+                    credentials = assume_role_data['Credentials']
+                    expiration = dateutil.parser.parse(credentials['Expiration'])
+                    expiration = expiration.replace(tzinfo=None)
+                    current = datetime.datetime.utcnow()
+                    if expiration < current:
+                        print('Role\'s credentials have expired on %s' % credentials['Expiration'])
+            except Exception as e:
+                printException(e) # TODO : remove
+                pass
+            if not expiration or expiration < current or credentials['AccessKeyId'] == None:
+                credentials = read_creds(source_profile)
+                credentials = assume_role(profile_name, credentials, role_arn, role_session_name)
+            else:
+                print(str(credentials))
         # Read from ~/.aws/credentials
-        key_id, secret, mfa_serial, token = read_creds_from_aws_credentials_file(profile_name)
-        if not key_id:
-            # Read from EC2 instance metadata
-            key_id, secret, token = read_creds_from_ec2_instance_metadata()
-        if not key_id:
-            # Read from environment variables
-            key_id, secret, token = read_creds_from_environment_variables()
-    # If an MFA serial was provided as an argument, discard whatever we found in config file
-    if mfa_serial_arg:
-        mfa_serial = mfa_serial_arg
-    # If we don't have valid creds by now, throw an exception
-    if key_id == None or secret == None:
+        else:
+            credentials = read_creds_from_aws_credentials_file(profile_name)
+            print('A')
+            print(str(credentials))
+            if credentials['SessionToken']:
+                if 'Expiration' in credentials and credentials['Expiration']:
+                    expiration = dateutil.parser.parse(credentials['Expiration'])
+                    expiration = expiration.replace(tzinfo=None)
+                    current = datetime.datetime.utcnow()
+                    if expiration < current:
+                        printInfo('Saved STS credentials expired on %s' % credentials['Expiration'])
+                        force_init = True
+                else:
+                    printInfo('Setting force init A')
+                    force_init = True
+            else:
+                printInfo('Setting force init B')
+                force_init = True
+                first_sts_session = True
+            printInfo('Force init: %s' % force_init)
+            if force_init:
+                print('A!!')
+                credentials = read_creds_from_aws_credentials_file(profile_name if first_sts_session else '%s-nomfa' % profile_name)
+                print('B!!')
+                print(str(credentials))
+                if mfa_serial_arg: 
+                    credentials['SerialNumber'] = mfa_serial_arg
+                if mfa_code:
+                    credentials['TokenCode'] = mfa_code
+                credentials = init_sts_session(profile_name, credentials)
+    # If we don't have valid creds by now, print an error message
+    if credentials['AccessKeyId'] == None or credentials['SecretAccessKey'] == None:
         printError('Error: could not find AWS credentials. Use the --help option for more information.')
-    return key_id, secret, token
+    return credentials
+ 
 
 #
 # Read credentials from AWS config file
 #
 def read_creds_from_aws_credentials_file(profile_name, credentials_file = aws_credentials_file):
-    key_id = None
-    secret = None
-    mfa_serial = None
-    security_token = None
+    credentials = init_creds()
+    profile_found = False
     try:
-        with open(credentials_file, 'rt') as credentials:
-            for line in credentials:
+        with open(credentials_file, 'rt') as cf:
+            for line in cf:
                 profile_line = re_profile_name.match(line)
                 if profile_line:
                     if profile_line.groups()[0] == profile_name:
@@ -454,16 +594,19 @@ def read_creds_from_aws_credentials_file(profile_name, credentials_file = aws_cr
                         profile_found = False
                 if profile_found:
                     if re_access_key.match(line):
-                        key_id = line.split("=")[1].strip()
+                        credentials['AccessKeyId'] = line.split("=")[1].strip()
                     elif re_secret_key.match(line):
-                        secret = line.split("=")[1].strip()
+                        credentials['SecretAccessKey'] = line.split("=")[1].strip()
                     elif re_mfa_serial.match(line):
-                        mfa_serial = (line.split('=')[1]).strip()
+                        credentials['SerialNumber'] = (line.split('=')[1]).strip()
                     elif re_session_token.match(line):
-                        security_token = ('='.join(x for x in line.split('=')[1:])).strip()
+                        credentials['SessionToken'] = ('='.join(x for x in line.split('=')[1:])).strip()
+                    elif re_expiration.match(line):
+                        credentials['Expiration'] = ('='.join(x for x in line.split('=')[1:])).strip()
     except Exception as e:
+        printException(e)
         pass
-    return key_id, secret, mfa_serial, security_token
+    return credentials
 
 #
 # Read credentials from a CSV file
@@ -543,6 +686,33 @@ def read_profile_default_args(recipe_name):
     return default_args
 
 #
+# Read profiles from AWS config file
+#
+def read_profile_from_aws_config_file(profile_name, config_file = aws_config_file):
+    role_arn = None
+    source_profile = None
+    profile_found = False
+    try:
+        with open(config_file, 'rt') as config:
+            for line in config:
+                profile_line = re_profile_name.match(line)
+                if profile_line:
+                    role_profile_name = profile_line.groups()[0].split()[-1]
+                    if role_profile_name == profile_name:
+                        profile_found = True
+                    else:
+                        profile_found = False
+                if profile_found:
+                    if re_role_arn.match(line):
+                        role_arn = line.split('=')[1].strip()
+                    elif re_source_profile.match(line):
+                        source_profile = line.split('=')[1].strip()
+    except Exception as e:
+        printException(e)
+        pass
+    return role_arn, source_profile
+
+#
 # Returns the argument default value, customized by the user or default programmed value
 #
 def set_profile_default(default_args, key, default):
@@ -568,12 +738,13 @@ def show_profiles_from_aws_credentials_file():
 #
 # Write credentials to AWS config file
 #
-def write_creds_to_aws_credentials_file(profile_name, key_id = None, secret = None, session_token = None, mfa_serial = None):
+def write_creds_to_aws_credentials_file(profile_name, credentials):
     profile_found = False
     profile_ever_found = False
     session_token_written = False
     security_token_written = False
     mfa_serial_written = False
+    expiration_written = False
     # Create the .aws folder if needed
     if not os.path.isdir(aws_config_dir):
         os.mkdir(aws_config_dir)
@@ -589,31 +760,37 @@ def write_creds_to_aws_credentials_file(profile_name, key_id = None, secret = No
                 profile_ever_found = True
             else:
                 if profile_found:
-                    if session_token and not session_token_written:
-                        print('aws_session_token = %s' % session_token)
+                    if 'SessionToken' in credentials and credentials['SessionToken'] and not session_token_written:
+                        print('aws_session_token = %s' % credentials['SessionToken'])
                         session_token_written = True
-                    if session_token and not security_token_written:
-                        print('aws_security_token = %s' % session_token)
+                    if 'SessionToken' in credentials and credentials['SessionToken'] and not security_token_written:
+                        print('aws_security_token = %s' % credentials['SessionToken'])
                         security_token_written = True
-                    if mfa_serial and not mfa_serial_written:
-                        print('aws_mfa_serial = %s' % mfa_serial)
+                    if 'SerialNumber' in credentials and credentials['SerialNumber'] and not mfa_serial_written:
+                        print('aws_mfa_serial = %s' % credentials['SerialNumber'])
                         mfa_serial_written = True
+                    if 'Expiration' in credentials and credentials['Expiration'] and not expiration_written:
+                        print('expiration = %s' % credentials['Expiration'])
+                        expiration_written = True
                 profile_found = False
             print(line.rstrip())
         elif profile_found:
-            if re_access_key.match(line) and key_id:
-                print('aws_access_key_id = %s' % key_id)
-            elif re_secret_key.match(line) and secret:
-                print('aws_secret_access_key = %s' % secret)
-            elif re_mfa_serial.match(line) and mfa_serial:
-                print('aws_mfa_serial = %s' % mfa_serial)
+            if re_access_key.match(line) and 'AccessKeyId' in credentials and credentials['AccessKeyId']:
+                print('aws_access_key_id = %s' % credentials['AccessKeyId'])
+            elif re_secret_key.match(line) and 'SecretAccessKey' in credentials and credentials['SecretAccessKey']:
+                print('aws_secret_access_key = %s' % credentials['SecretAccessKey'])
+            elif re_mfa_serial.match(line) and 'SerialNumber' in credentials and credentials['SerialNumber']:
+                print('aws_mfa_serial = %s' % credentials['SerialNumber'])
                 mfa_serial_written = True
-            elif re_session_token.match(line) and session_token:
-                print('aws_session_token = %s' % session_token)
+            elif re_session_token.match(line) and 'SessionToken' in credentials and credentials['SessionToken']:
+                print('aws_session_token = %s' % credentials['SessionToken'])
                 session_token_written = True
-            elif re_security_token.match(line) and session_token:
-                print('aws_security_token = %s' % session_token)
+            elif re_security_token.match(line) and 'SessionToken' in credentials and credentials['SessionToken']:
+                print('aws_security_token = %s' % credentials['SessionToken'])
                 security_token_written = True
+            elif re_expiration.match(line) and 'Expiration' in credentials and credentials['Expiration']:
+                print('expiration = %s' % credentials['Expiration'])
+                expiration_written = True
             else:
                 print(line.rstrip())
         else:
@@ -622,15 +799,15 @@ def write_creds_to_aws_credentials_file(profile_name, key_id = None, secret = No
     # Complete the profile if needed
     if profile_found:
         with open(aws_credentials_file, 'a') as f:
-            complete_profile(f, session_token, session_token_written, mfa_serial, mfa_serial_written)
+            complete_profile(f, credentials['SessionToken'], session_token_written, credentials['SerialNumber'], mfa_serial_written)
 
     # Add new profile if not found
     if not profile_ever_found:
         with open(aws_credentials_file, 'a') as f:
             f.write('[%s]\n' % profile_name)
-            f.write('aws_access_key_id = %s\n' % key_id)
-            f.write('aws_secret_access_key = %s\n' % secret)
-            complete_profile(f, session_token, session_token_written, mfa_serial, mfa_serial_written)
+            f.write('aws_access_key_id = %s\n' % credentials['AccessKeyId'])
+            f.write('aws_secret_access_key = %s\n' % credentials['SecretAccessKey'])
+            complete_profile(f, credentials['SessionToken'], session_token_written, credentials['SerialNumber'], mfa_serial_written)
 
 #
 # Append session token and mfa serial if needed
