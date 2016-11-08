@@ -10,5 +10,5 @@ from opinel.utils import *
 #
 # Connect to RDS
 #
-def connect_rds(key_id, secret, session_token, region_name):
-    return connect_service('rds', key_id, secret, session_token, region_name)
+def connect_rds(credentials, region_name):
+    return connect_service('rds', credentials, region_name)

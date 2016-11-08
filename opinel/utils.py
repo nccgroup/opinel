@@ -548,23 +548,23 @@ def read_creds(profile_name, csv_file = None, mfa_serial_arg = None, mfa_code = 
                         printInfo('Saved STS credentials expired on %s' % credentials['Expiration'])
                         force_init = True
                 else:
-                    printInfo('Setting force init A')
                     force_init = True
             else:
-                printInfo('Setting force init B')
                 force_init = True
                 first_sts_session = True
-            printInfo('Force init: %s' % force_init)
             if force_init:
                 credentials = read_creds_from_aws_credentials_file(profile_name if first_sts_session else '%s-nomfa' % profile_name)
                 if mfa_serial_arg: 
                     credentials['SerialNumber'] = mfa_serial_arg
                 if mfa_code:
                     credentials['TokenCode'] = mfa_code
-                credentials = init_sts_session(profile_name, credentials)
+                if 'AccessKeyId' in credentials and credentials['AccessKeyId']:
+                    credentials = init_sts_session(profile_name, credentials)
     # If we don't have valid creds by now, print an error message
-    if credentials['AccessKeyId'] == None or credentials['SecretAccessKey'] == None:
+    if 'AccessKeyId' not in credentials or credentials['AccessKeyId'] == None or 'SecretAccessKey' not in credentials or credentials['SecretAccessKey'] == None:
         printError('Error: could not find AWS credentials. Use the --help option for more information.')
+    if not 'AccessKeyId' in credentials:
+        credentials = { 'AccessKeyId': None }
     return credentials
  
 

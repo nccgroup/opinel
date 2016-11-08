@@ -10,5 +10,5 @@ from opinel.utils import *
 #
 # Connect to Redshift
 #
-def connect_redshift(key_id, secret, session_token, region):
-    return connect_service('redshift', key_id, secret, session_token, region)
+def connect_redshift(credentials, region):
+    return connect_service('redshift', credentials, region)
