@@ -531,7 +531,6 @@ def read_creds(profile_name, csv_file = None, mfa_serial_arg = None, mfa_code = 
                     if expiration < current:
                         print('Role\'s credentials have expired on %s' % credentials['Expiration'])
             except Exception as e:
-                printException(e) # TODO : remove
                 pass
             if not expiration or expiration < current or credentials['AccessKeyId'] == None:
                 credentials = read_creds(source_profile)

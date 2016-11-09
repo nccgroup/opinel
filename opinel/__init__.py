@@ -1,2 +1,2 @@
 __author__  = 'l01cd3v'
-__version__ = '1.0.0rc0'
+__version__ = '1.0.0'
