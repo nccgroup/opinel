@@ -948,6 +948,15 @@ def pass_condition(b, test, a):
             else:
                 return True
         return False
+    elif test == 'isSameAccount':
+        if type(b) != list:
+            b = [ b ]
+        for c in b:
+            if c == a or re.match(r'arn:aws:iam:.*?:%s:.*' % a, c):
+                return True
+            else:
+                continue
+        return False
     elif test == 'containOneMatching':
         if not type(b) == list:
             b = [ b ]
