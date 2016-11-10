@@ -512,7 +512,7 @@ def read_creds(profile_name, csv_file = None, mfa_serial_arg = None, mfa_code = 
     elif profile_name == 'default':
         # Try reading credentials from environment variables (Issue #11) if the profile name is 'default'
         credentials['AccessKeyId'], credentials['SecretAccessKey'], credentials['SessionToken'] = read_creds_from_environment_variables()
-    else:
+    if not credentials['AccessKeyId'] and not csv_file:
         # Read from EC2 instance metadata
         credentials['AccessKeyId'], credentials['SecretAccessKey'], credentials['SessionToken'] = read_creds_from_ec2_instance_metadata()
     if not credentials['AccessKeyId'] and not csv_file:
