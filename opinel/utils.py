@@ -467,7 +467,7 @@ def get_cached_credentials_filename(role_name, role_arn):
 # Create a dictionary with all the necessary keys set to "None"
 #
 def init_creds():
-    return { 'AcccessKeyId': None, 'SecretAccessKey': None, 'SessionToken': None, 'Expiration': None, 'SerialNumber': None, 'TokenCode': None }
+    return { 'AccessKeyId': None, 'SecretAccessKey': None, 'SessionToken': None, 'Expiration': None, 'SerialNumber': None, 'TokenCode': None }
 
 #
 # Fetch STS credentials
