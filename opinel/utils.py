@@ -548,7 +548,6 @@ def read_creds(profile_name, csv_file = None, mfa_serial_arg = None, mfa_code = 
                 else:
                     force_init = True
             else:
-                force_init = True
                 first_sts_session = True
             if force_init:
                 credentials = read_creds_from_aws_credentials_file(profile_name if first_sts_session else '%s-nomfa' % profile_name)
