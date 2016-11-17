@@ -624,8 +624,7 @@ def read_creds_from_ec2_instance_metadata():
     secret = None
     token = None
     try:
-        has_role =
-        requests.get('http://169.254.169.254/latest/meta-data/iam/security-credentials', timeout = 1)
+        has_role = requests.get('http://169.254.169.254/latest/meta-data/iam/security-credentials', timeout = 1)
         if has_role.status_code == 200:
             iam_role = has_role.text
             credentials = requests.get('http://169.254.169.254/latest/meta-data/iam/security-credentials/%s/' % iam_role.strip()).json()
