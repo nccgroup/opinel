@@ -131,7 +131,7 @@ def add_common_argument(parser, default_args, argument_name):
     elif argument_name == 'ip-ranges-key-name':
         parser.add_argument('--ip-ranges-key-name',
                             dest='ip_ranges_key_name',
-                            default=['name'],
+                            default='name',
                             help='Name of the key containing the display name of a known CIDR.')
     else:
         raise Exception('Invalid parameter name %s' % argument_name)
