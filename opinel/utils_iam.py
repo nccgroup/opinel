@@ -55,8 +55,7 @@ def add_iam_argument(parser, default_args, argument_name):
     elif argument_name == 'csv-credentials':
         parser.add_argument('--csv-credentials',
                     dest='csv_credentials',
-                    default=[ None ],
-                    nargs='+',
+                    default=None,
                     help='Read credentials from a CSV file')
     else:
         raise Exception('Invalid parameter name: %s' % argument_name)
