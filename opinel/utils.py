@@ -4,7 +4,7 @@ from __future__ import print_function
 # Opinel version
 from opinel import __version__ as OPINEL_VERSION
 from opinel.load_data import load_data
-from opinel.iampoliciesgonewild import get_actions_from_statement
+from iampoliciesgonewild import get_actions_from_statement
 
 # Import stock packages
 import argparse
