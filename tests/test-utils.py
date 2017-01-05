@@ -24,12 +24,16 @@ class TestUtilsClass:
     #
     def test_build_region_list(self):
         assert type(build_region_list('ec2', [])) == list
-        assert type(build_region_list('ec2', [], True, True)) == list
-        assert 'cn-north-1' in build_region_list('ec2', [], False, True)
-        assert 'cn-north-1' not in build_region_list('ec2', [], False, False)
-        assert 'us-gov-west-1' in build_region_list('ec2', [], True, False)
-        assert 'us-gov-west-1' not in build_region_list('ec2', [], False, False)
-        assert build_region_list('', True, True) == []
+        assert type(build_region_list('ec2', [], 'aws-us-gov')) == list
+        assert 'cn-north-1' in build_region_list('ec2', [], 'aws-cn')
+        assert 'cn-north-1' not in build_region_list('ec2')
+        assert 'us-gov-west-1' in build_region_list('ec2', [], 'aws-us-gov')
+        assert 'us-gov-west-1' not in build_region_list('ec2')
+        assert ['us-east-1'] == build_region_list('ec2', ['us-east-1'])
+        assert 'us-west-2' in build_region_list('ec2', ['us-east-1', 'us-east-2', 'us-west-2'])
+        assert 'us-east-1' not in build_region_list('ec2', ['us-west-1'])
+        assert 'us-east-1' not in build_region_list('ec2', ['us-east-1', 'us-east-2'], 'aws-cn')
+        assert build_region_list('') == []
 
     #
     # Unit tests for get_environment_name()

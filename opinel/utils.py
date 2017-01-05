@@ -30,6 +30,7 @@ except ImportError:
     from queue import Queue
 
 # Import third-party packages
+from botocore.session import Session
 import boto3
 import requests
 
@@ -281,24 +282,15 @@ class CustomJSONEncoder(json.JSONEncoder):
 #
 # Build the list of target region names
 #
-def build_region_list(service, chosen_regions = [], include_gov = False, include_cn = False):
-    boto_regions = []
-    # h4ck pending botocore issue 339
-    package_dir, foo = os.path.split(__file__)
-    boto_endpoints_file = os.path.join(package_dir, 'data', 'boto-endpoints.json')
-    with open(boto_endpoints_file, 'rt') as f:
-        boto_endpoints = json.load(f)
-        # Of course things aren't that easy...
-        service = 'ec2containerservice' if service == 'ecs' else service
-        if not service in boto_endpoints:
-            printError('Error: the service \'%s\' is not supported yet.' % service)
-            return []
-        for region in boto_endpoints[service]:
-            boto_regions.append(region)
+def build_region_list(service, chosen_regions = [], partition_name = 'aws'):
+    # Of course things aren't that easy...
+    service = 'ec2containerservice' if service == 'ecs' else service
+    # Get list of regions from botocore
+    regions = Session().get_available_regions(service, partition_name = partition_name)
     if len(chosen_regions):
-        return list((Counter(boto_regions) & Counter(chosen_regions)).elements())
+        return list((Counter(regions) & Counter(chosen_regions)).elements())
     else:
-        return [region for region in boto_regions if (not re_gov_region.match(region) or include_gov) and (not re_cn_region.match(region) or include_cn)]
+        return regions
 
 #
 # Check boto version
