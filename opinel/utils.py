@@ -98,18 +98,11 @@ def add_common_argument(parser, default_args, argument_name):
                             default=[],
                             nargs='+',
                             help='Name of regions to run the tool in, defaults to all')
-    elif argument_name == 'with-gov':
-        parser.add_argument('--with-gov',
-                            dest='with_gov',
-                            default=False,
-                            action='store_true',
-                            help='Include the Government regions')
-    elif argument_name == 'with-cn':
-        parser.add_argument('--with-cn',
-                            dest='with_cn',
-                            default=False,
-                            action='store_true',
-                            help='Include the China regions')
+    elif argument_name == 'partition-name':
+        parser.add_argument('--partition-name',
+                            dest='partition_name',
+                            default='aws',
+                            help='Switch out of the public AWS partition (e.g. US gov or China)')
     elif argument_name == 'vpc':
         parser.add_argument('--vpc',
                             dest='vpc',
