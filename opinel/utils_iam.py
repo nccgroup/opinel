@@ -133,6 +133,62 @@ def create_default_groups(iam_client, common_groups, category_groups, dry_run):
             pass
 
 #
+# Create policy (managed or inline)
+#
+def create_policy(iam_client, is_managed, targets, template, subs, dry_run = False):
+
+        if not os.path.isfile(template):
+            printError('Error: file \'%s\' does not exist.' % template)
+            return
+        with open(template, 'rt') as f:
+            policy = f.read()
+        policy_name = os.path.basename(template).split('.')[0]
+        for sub in subs:
+            tmp = re.compile(sub, re.DOTALL|re.MULTILINE)
+            policy = tmp.sub(subs[sub], policy)
+            policy_name = tmp.sub(subs[sub], policy_name)
+        if not is_managed:
+            params = {}
+            params['PolicyName'] = policy_name
+            params['PolicyDocument' ] = policy
+            for target_type, target_name in targets:
+                callback = getattr(iam_client, 'put_' + target_type + '_policy')
+                params[target_type.title() + 'Name'] = target_name
+                try:
+                    printInfo('Creating policy \'%s\' for the \'%s\' IAM %s...' % (policy_name, target_name, target_type))
+                    if not dry_run:
+                        callback(**params)
+                except Exception as e:
+                    printException(e)
+                    pass
+        else:
+            params = {}
+            params['PolicyDocument'] = policy
+            params['PolicyName'] = policy_name
+            description = ''
+            # Search for a description file
+            descriptions_dir = os.path.join(os.path.dirname(template), 'descriptions')
+            if os.path.exists(descriptions_dir):
+                description_file = os.path.join(descriptions_dir, os.path.basename(template).replace('.json', '.txt'))
+                if os.path.isfile(description_file):
+                    with open(description_file, 'rt') as f:
+                        params['Description'] = f.read()
+            elif prompt_4_yes_no('Do you want to add a description to the \'%s\' policy' % policy_name):
+                params['Description'] = prompt_4_value('Enter the policy description:')
+            if not args.dry_run:
+                printInfo('Creating policy \'%s\'...' % (policy_name))
+                new_policy = iam_client.create_policy(**params)
+                if len(args.targets):
+                    callback = getattr(iam_client, 'attach_' + target_type + '_policy')
+                    for target in args.targets:
+                        printInfo('Attaching policy to the \'%s\' IAM %s...' % (target, target_type))
+                        params = {}
+                        params['PolicyArn'] = new_policy['Policy']['Arn']
+                        params[target_type.title() + 'Name'] = target
+                        callback(**params)
+
+
+#
 # Create and activate an MFA virtual device
 #
 def enable_mfa(iam_client, user, qrcode_file = None):
@@ -368,8 +424,10 @@ def get_all_access_keys(iam_client, user_name):
 # Get AWS account ID of authenticated user
 #
 def get_aws_account_id(iam_client):
-    result = iam_client.list_users(MaxItems = 1)
-    user_arn = result['Users'][0]['Arn']
+    try:
+        user_arn = iam_client.list_users(MaxItems = 1)['Users'][0]['Arn']
+    except:
+        user_arn = iam_client.get_user()['User']['Arn']
     return user_arn.split(':')[4]
 
 #
