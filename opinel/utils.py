@@ -409,6 +409,20 @@ def thread_work(targets, function, params = {}, num_threads = 0):
         q.put(target)
     q.join()
 
+#
+# Multithreaded get_region
+#
+def threaded_per_region(q, params):
+    while True:
+        try:
+            params['region'] = q.get()
+            method = params['method']
+            method(params)
+        except Exception as e:
+            printException(e)
+        finally:
+            q.task_done()
+
 ########################################
 # Credentials read/write functions
 ########################################
