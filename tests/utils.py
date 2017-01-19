@@ -292,9 +292,13 @@ class TestUtilsClass:
     #def show_profiles_from_aws_credentials_file():
     #def write_creds_to_aws_credentials_file(profile_name, credentials):
     #def complete_profile(f, session_token, session_token_written, mfa_serial, mfa_serial_written):
-    #def prompt_4_mfa_code(activate = False):
-    #def prompt_4_mfa_serial():
-    #def prompt_4_overwrite(filename, force_write):
-    #def prompt_4_value(question, choices = None, default = None, display_choices = True, display_indices = False, authorize_list = False, is_question = False, no_confirm = False, required = True):
-    #def prompt_4_yes_no(question):
+
+    #
+    # No unit tests for prompt functions
+    # 
+    # def test_prompt_functions(self):
+
+    #
+    # Unit test for pass_condition()
+    # 
     #def pass_condition(b, test, a):
