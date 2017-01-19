@@ -596,7 +596,7 @@ def read_creds_from_aws_credentials_file(profile_name, credentials_file = aws_cr
     except Exception as e:
     # Silent if error is due to no ~/.aws/credentials file
     if e.errno != 2:
-            printException(e)
+        printException(e)
         pass
     return credentials
 
@@ -702,7 +702,7 @@ def read_profile_from_aws_config_file(profile_name, config_file = aws_config_fil
     except Exception as e:
     # Silent if error is due to no .aws/config file
     if e.errno != 2:
-            printException(e)
+        printException(e)
         pass
     return role_arn, source_profile
 
