@@ -571,6 +571,9 @@ def read_creds_from_aws_credentials_file(profile_name, credentials_file = aws_cr
     credentials = init_creds()
     profile_found = False
     try:
+        # Make sure the ~.aws folder exists
+        if not os.path.exists(aws_config_dir):
+            os.makedirs(aws_config_dir)
         with open(credentials_file, 'rt') as cf:
             for line in cf:
                 profile_line = re_profile_name.match(line)
@@ -591,7 +594,9 @@ def read_creds_from_aws_credentials_file(profile_name, credentials_file = aws_cr
                     elif re_expiration.match(line):
                         credentials['Expiration'] = ('='.join(x for x in line.split('=')[1:])).strip()
     except Exception as e:
-        printException(e)
+	# Silent if error is due to no ~/.aws/credentials file
+	if e.errno != 2:
+	        printException(e)
         pass
     return credentials
 
@@ -695,7 +700,9 @@ def read_profile_from_aws_config_file(profile_name, config_file = aws_config_fil
                     elif re_source_profile.match(line):
                         source_profile = line.split('=')[1].strip()
     except Exception as e:
-        printException(e)
+	# Silent if error is due to no .aws/config file
+	if e.errno != 2:
+	        printException(e)
         pass
     return role_arn, source_profile
 
