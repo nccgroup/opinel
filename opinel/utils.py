@@ -288,10 +288,11 @@ def build_region_list(service, chosen_regions = [], partition_name = 'aws'):
 #
 # Check boto version
 #
-def check_boto3_version():
+def check_boto3_version(min_boto3_version = None):
     printInfo('Checking the version of boto...')
-    # TODO: read that from requirements file...
-    min_boto3_version = '1.1.1'
+    if not min_boto3_version:
+        # TODO: read that from requirements file...
+        min_boto3_version = '1.1.1'
     latest_boto3_version = 0
     if boto3.__version__ < min_boto3_version:
         printError('Error: the version of boto3 installed on this system (%s) is too old. Boto version %s or newer is required.' % (boto3.__version__, min_boto3_version))
@@ -470,7 +471,7 @@ def init_creds():
 #
 # Fetch STS credentials
 #
-def init_sts_session(profile_name, credentials, duration = 28800, session_name = None):
+def init_sts_session(profile_name, credentials, duration = 28800, session_name = None, write_to_file = True):
     # Set STS arguments
     sts_args = {
         'DurationSeconds': duration
@@ -494,7 +495,8 @@ def init_sts_session(profile_name, credentials, duration = 28800, session_name =
     secret = sts_response['Credentials']['SecretAccessKey']
     token = sts_response['Credentials']['SessionToken']
     expiration = sts_response['Credentials']['Expiration']
-    write_creds_to_aws_credentials_file(profile_name, sts_response['Credentials'])
+    if write_to_file:
+        write_creds_to_aws_credentials_file(profile_name, sts_response['Credentials'])
     return sts_response['Credentials']
 
 #
@@ -618,7 +620,9 @@ def read_creds_from_csv(filename):
                         mfa_serial = mfa_serial.rstrip()
                     except:
                         printError('Error, the CSV file is not properly formatted')
-    return key_id.rstrip(), secret.rstrip(), mfa_serial
+    key_id = key_id.rstrip() if key_id else key_id
+    secret = secret.rstrip() if secret else secret
+    return key_id, secret, mfa_serial
 
 #
 # Read credentials from EC2 instance metadata (IAM role)
