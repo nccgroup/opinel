@@ -8,6 +8,7 @@ opinel
         :target: https://coveralls.io/github/nccgroup/opinel
 .. image:: https://badge.fury.io/py/opinel.svg
         :target: https://badge.fury.io/py/opinel
+        :align: right
 
 ************
 Introduction
