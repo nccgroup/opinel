@@ -4,6 +4,9 @@ opinel
 
 .. image:: https://travis-ci.org/nccgroup/opinel.svg?branch=master
         :target: https://travis-ci.org/nccgroup/opinel
+.. image:: https://coveralls.io/repos/github/nccgroup/opinel/badge.svg
+        :target: https://coveralls.io/github/nccgroup/opinel
+
 
 ************
 Introduction
