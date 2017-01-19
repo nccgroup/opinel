@@ -612,16 +612,16 @@ def read_creds_from_csv(filename):
     with open(filename, 'rt') as csvfile:
         for i, line in enumerate(csvfile):
             if i == 1:
-                try:
-                    username, key_id, secret = line.split(',')
-                except:
-                    try:
-                        username, key_id, secret, mfa_serial = line.split(',')
-                        mfa_serial = mfa_serial.rstrip()
-                    except:
-                        printError('Error, the CSV file is not properly formatted')
-    key_id = key_id.rstrip() if key_id else key_id
-    secret = secret.rstrip() if secret else secret
+                # Old CSV files were formatted as username, key_id, secret
+                # New CSV files are formatted as key_id, secret
+                # I authorized users to add their MFA serial after the secret
+                creds = line.split(',')
+                key_i = [i for (i, v) in enumerate(creds) if v.startswith('AKIA')]
+                if len(key_i) == 1:
+                    key_i = key_i[0]
+                    key_id = creds[key_i].strip()
+                    secret = creds[key_i + 1].strip()
+                    mfa_serial = creds[key_i + 2].strip() if key_i + 2 < len(creds) else None
     return key_id, secret, mfa_serial
 
 #
