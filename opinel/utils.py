@@ -595,8 +595,8 @@ def read_creds_from_aws_credentials_file(profile_name, credentials_file = aws_cr
                         credentials['Expiration'] = ('='.join(x for x in line.split('=')[1:])).strip()
     except Exception as e:
     # Silent if error is due to no ~/.aws/credentials file
-    if e.errno != 2:
-        printException(e)
+        if e.errno != 2:
+            printException(e)
         pass
     return credentials
 
@@ -701,8 +701,8 @@ def read_profile_from_aws_config_file(profile_name, config_file = aws_config_fil
                         source_profile = line.split('=')[1].strip()
     except Exception as e:
     # Silent if error is due to no .aws/config file
-    if e.errno != 2:
-        printException(e)
+        if e.errno != 2:
+            printException(e)
         pass
     return role_arn, source_profile
 
