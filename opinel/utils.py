@@ -172,6 +172,8 @@ add_common_argument(parser, {}, 'profile')
 ########################################
 
 def printException(e):
+    if 'verbose_exceptions' not in globals():
+        return
     global verbose_exceptions
     if verbose_exceptions:
         printError(str(traceback.format_exc()))
@@ -179,6 +181,8 @@ def printException(e):
         printError(str(e))
 
 def configPrintException(enable):
+    if 'verbose_exceptions' not in globals():
+        return
     global verbose_exceptions
     verbose_exceptions = enable
 
@@ -188,6 +192,9 @@ def configPrintException(enable):
 ########################################
 
 def printDebug(msg):
+    if 'verbose_exceptions' not in globals():
+        return
+    global verbose_excpetions
     if verbose_exceptions:
         printGeneric(sys.stdout, msg)
 
