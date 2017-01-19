@@ -12,7 +12,7 @@ before_script:
   - pip install coveralls
 
 script:
-    - nosetests --with-coverage tests/test-load_data.py tests/test-utils.py || exit 1
+    - nosetests --with-coverage tests/load_data.py tests/utils.py || exit 1
 
 after_success:
     - coveralls
