@@ -172,8 +172,6 @@ add_common_argument(parser, {}, 'profile')
 ########################################
 
 def printException(e):
-    if 'verbose_exceptions' not in globals():
-        return
     global verbose_exceptions
     if verbose_exceptions:
         printError(str(traceback.format_exc()))
@@ -181,8 +179,6 @@ def printException(e):
         printError(str(e))
 
 def configPrintException(enable):
-    if 'verbose_exceptions' not in globals():
-        return
     global verbose_exceptions
     verbose_exceptions = enable
 
@@ -249,7 +245,7 @@ def save_blob_as_json(filename, blob, force_write, debug):
         pass
 
 #
-# Creates/Modifies an ip-range-XXX.json file
+# Creates/Modifies an ip-range.json file
 #
 def save_ip_ranges(profile_name, prefixes, force_write, debug):
     filename = 'ip-ranges-%s.json' % profile_name
@@ -802,7 +798,7 @@ def write_creds_to_aws_credentials_file(profile_name, credentials):
             print(line.rstrip())
 
     # Complete the profile if needed
-    if profile_found:
+    if profile_found and ('SessionToken' in credentials or 'SerialNumber' in credentials):
         with open(aws_credentials_file, 'a') as f:
             complete_profile(f, credentials['SessionToken'], session_token_written, credentials['SerialNumber'], mfa_serial_written)
 
