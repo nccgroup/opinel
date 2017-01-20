@@ -44,18 +44,18 @@ class TestUtilsClass:
     #
     # Unit tests for print functions
     #
-#    def test_print_functions(self):
-#        e = Exception()
-#        configPrintException(True)
-#        printException(e)
-#        configPrintException(False)
-#        printException(e)
-#        printError('Error', False)
-#        printError('Error', True)
-#        printInfo('Info', False)
-#        printInfo('Info', True)
-#        printGeneric(sys.stdout, 'Generic', False)
-#        printGeneric(sys.stderr, 'Generic', True)
+    def test_print_functions(self):
+        e = Exception()
+        configPrintException(True)
+        printException(e)
+        configPrintException(False)
+        printException(e)
+        printError('Error', False)
+        printError('Error', True)
+        printInfo('Info', False)
+        printInfo('Info', True)
+        printGeneric(sys.stdout, 'Generic', False)
+        printGeneric(sys.stderr, 'Generic', True)
 
     #
     # Unit tests for check_bot_version()
