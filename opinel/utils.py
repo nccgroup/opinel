@@ -39,6 +39,8 @@ import requests
 # Globals
 ########################################
 
+verbose_exceptions = False
+
 re_profile_name = re.compile(r'\[(.*)\]')
 re_access_key = re.compile(r'aws_access_key_id')
 re_secret_key = re.compile(r'aws_secret_access_key')
