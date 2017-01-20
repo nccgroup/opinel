@@ -176,7 +176,10 @@ add_common_argument(parser, {}, 'profile')
 def printException(e):
     global verbose_exceptions
     if verbose_exceptions:
-        printError(str(traceback.format_exc()))
+        try:
+            printError(str(traceback.format_exc()))
+        except:
+            printError(str(e))
     else:
         printError(str(e))
 
