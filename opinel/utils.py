@@ -942,6 +942,16 @@ def pass_condition(b, test, a):
             b = json.loads(b)
         actions = get_actions_from_statement(b)
         return True if a.lower() in actions else False
+    elif test == 'notContainAction':
+        return not pass_condition(b, 'containAction', a)
+    elif test == 'containAtLeastOneAction':
+        if type(b) != dict:
+            b = json.loads(b)
+        actions = get_actions_from_statement(b)
+        for c in a:
+            if c.lower() in actions:
+                return True
+        return False
     elif test == 'isCrossAccount':
         if type(b) != list:
             b = [ b ]
