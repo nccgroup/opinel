@@ -367,7 +367,7 @@ def get_environment_name(args):
 #
 # Handle truncated responses
 #
-def handle_truncated_response(callback, params, marker_name, entities):
+def handle_truncated_response(callback, params, entities):
     results = {}
     for entity in entities:
         results[entity] = []
@@ -376,8 +376,9 @@ def handle_truncated_response(callback, params, marker_name, entities):
         for entity in entities:
             if entity in response:
                 results[entity] = results[entity] + response[entity]
-        if marker_name in response and response[marker_name]:
-            params[marker_name] = response[marker_name]
+        for marker_name in ['NextToken', 'Marker']:
+            if marker_name in response and response[marker_name]:
+                params[marker_name] = response[marker_name]
         else:
             break
     return results
@@ -476,7 +477,7 @@ def init_sts_session(profile_name, credentials, duration = 28800, session_name =
         'DurationSeconds': duration
     }
     # Prompt for MFA code if MFA serial present
-    if credentials['SerialNumber']:
+    if 'SerialNumber' in credentials and credentials['SerialNumber']:
         if not credentials['TokenCode']:
             credentials['TokenCode'] = prompt_4_mfa_code()
             if credentials['TokenCode'] == 'q':
@@ -594,10 +595,9 @@ def read_creds_from_aws_credentials_file(profile_name, credentials_file = aws_cr
                     elif re_expiration.match(line):
                         credentials['Expiration'] = ('='.join(x for x in line.split('=')[1:])).strip()
     except Exception as e:
-    # Silent if error is due to no ~/.aws/credentials file
-    if e.errno != 2:
-        printException(e)
-        pass
+        # Silent if error is due to no ~/.aws/credentials file
+        if e.errno != 2:
+            printException(e)
     return credentials
 
 #
@@ -700,10 +700,9 @@ def read_profile_from_aws_config_file(profile_name, config_file = aws_config_fil
                     elif re_source_profile.match(line):
                         source_profile = line.split('=')[1].strip()
     except Exception as e:
-    # Silent if error is due to no .aws/config file
-    if e.errno != 2:
-        printException(e)
-        pass
+        # Silent if error is due to no .aws/config file
+        if e.errno != 2:
+            printException(e)
     return role_arn, source_profile
 
 #

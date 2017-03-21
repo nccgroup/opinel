@@ -31,7 +31,7 @@ def get_name(local, remote, default_attribute):
     name_found = False
     if 'Tags' in remote:
         for tag in remote['Tags']:
-            if tag['Key'] == 'Name':
+            if tag['Key'] == 'Name' and tag['Value'] != '':
                 local['name'] = tag['Value']
                 name_found = True
     if not name_found:
