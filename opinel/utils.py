@@ -526,6 +526,9 @@ def read_creds(profile_name, csv_file = None, mfa_serial_arg = None, mfa_code = 
     if not credentials['AccessKeyId'] and not csv_file:
         # Lookup if a role is defined in ~/.aws/config
         role_arn, source_profile = read_profile_from_aws_config_file(profile_name)
+        if not role_arn and not source_profile:
+            # Lookup if a role is defined in ~/.aws/credentials
+            role_arn, source_profile = read_profile_from_aws_config_file(profile_name, aws_credentials_file)
         if role_arn and source_profile:
             # Lookup cached credentials
             try:
