@@ -62,6 +62,7 @@ aws_config_dir = os.path.join(os.path.expanduser('~'), '.aws')
 aws_credentials_file = os.path.join(aws_config_dir, 'credentials')
 aws_credentials_file_tmp = os.path.join(aws_config_dir, 'credentials.tmp')
 aws_config_file = os.path.join(aws_config_dir, 'config')
+aws_cli_cache_dir = os.path.join(os.path.expanduser('~'), '.aws/cli/cache')
 
 ########################################
 ##### Argument parser
@@ -468,7 +469,9 @@ def assume_role(role_name, credentials, role_arn, role_session_name):
 def get_cached_credentials_filename(role_name, role_arn):
     filename_p1 = role_name.replace('/','-')
     filename_p2 = role_arn.replace('/', '-').replace(':', '_')
-    return os.path.join(os.path.join(os.path.expanduser('~'), '.aws'), 'cli/cache/%s--%s.json' % (filename_p1, filename_p2))
+    if not os.path.isdir(aws_cli_cache_dir):
+        os.makedirs(aws_cli_cache_dir)
+    return os.path.join(aws_cli_cache_dir, '%s--%s.json' % (filename_p1, filename_p2))
 
 #
 # Create a dictionary with all the necessary keys set to "None"
