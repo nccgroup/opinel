@@ -4,7 +4,7 @@ from __future__ import print_function
 # Opinel version
 from opinel import __version__ as OPINEL_VERSION
 from opinel.load_data import load_data
-from iampoliciesgonewild import get_actions_from_statement
+from iampoliciesgonewild import get_actions_from_statement, _expand_wildcard_action
 
 # Import stock packages
 import argparse
@@ -931,17 +931,16 @@ def pass_condition(b, test, a):
                 return True
         return False
     if test == 'notInSubnets':
-        grant = netaddr.IPNetwork(b)
-        for c in a:
-            known_subnet = netaddr.IPNetwork(c)
-            if grant in known_subnet:
-                return False
-        return True
+        return not pass_condition(b, 'inSubnets', a)
     elif test == 'containAction':
         if type(b) != dict:
             b = json.loads(b)
-        actions = get_actions_from_statement(b)
-        return True if a.lower() in actions else False
+        statement_actions = get_actions_from_statement(b)
+        rule_actions = _expand_wildcard_action(a)
+        for action in rule_actions:
+            if action.lower() in statement_actions:
+                return True
+        return False
     elif test == 'notContainAction':
         return not pass_condition(b, 'containAction', a)
     elif test == 'containAtLeastOneAction':
