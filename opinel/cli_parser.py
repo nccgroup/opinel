@@ -83,3 +83,8 @@ class OpinelArgumentParser(object):
                                 help='')
         else:
             raise Exception('Invalid parameter name %s' % argument_name)
+
+
+    def parse_args(self):
+        args = self.parser.parse_args()
+        return args
