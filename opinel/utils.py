@@ -317,8 +317,10 @@ def check_opinel_version(min_version, max_version = None):
         return False
     return True
 
-def get_opinel_requirement():
-    requirements_file = os.path.join(os.getcwd(), 'requirements.txt')
+def get_opinel_requirement(script_path):
+    script_dir = os.path.dirname(script_path)
+    # Requirements file is either next to the script or in data/requirements
+    requirements_file = 'requirements.txt' if os.path.isfile('requirements.txt') else os.path.join(script_dir, 'data/requirements.txt')
     with open(requirements_file, 'rt') as f:
         for line in f.readlines():
             opinel_requirements = re_opinel.match(line)
