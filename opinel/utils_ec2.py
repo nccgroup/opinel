@@ -27,12 +27,12 @@ def connect_elb(credentials, region_name):
 #
 # Get name from tags
 #
-def get_name(local, remote, default_attribute):
+def get_name(src, dst, default_attribute):
     name_found = False
-    if 'Tags' in remote:
-        for tag in remote['Tags']:
+    if 'Tags' in src:
+        for tag in src['Tags']:
             if tag['Key'] == 'Name' and tag['Value'] != '':
-                local['name'] = tag['Value']
+                dst['name'] = tag['Value']
                 name_found = True
     if not name_found:
-        local['name'] = remote[default_attribute]
+        dst['name'] = src[default_attribute]
