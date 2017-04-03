@@ -36,3 +36,4 @@ def get_name(src, dst, default_attribute):
                 name_found = True
     if not name_found:
         dst['name'] = src[default_attribute]
+    return dst['name']
