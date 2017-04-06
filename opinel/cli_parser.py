@@ -61,9 +61,9 @@ class OpinelArgumentParser(object):
                                 default=[],
                                 nargs='+',
                                 help='Config file(s) that contain your known IP ranges.')
-        elif argument_name == 'ip-ranges-key-name':
-            self.parser.add_argument('--ip-ranges-key-name',
-                                dest='ip_ranges_key_name',
+        elif argument_name == 'ip-ranges-name-key':
+            self.parser.add_argument('--ip-ranges-name-key',
+                                dest='ip_ranges_name_key',
                                 default='name',
                                 help='Name of the key containing the display name of a known CIDR.')
         elif argument_name == 'mfa-serial':
