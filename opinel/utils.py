@@ -505,17 +505,19 @@ def read_creds_from_csv(filename):
     key_id = None
     secret = None
     mfa_serial = None
+    secret_next = False
     with open(filename, 'rt') as csvfile:
         for i, line in enumerate(csvfile):
-            if i == 1:
-                try:
-                    username, key_id, secret = line.split(',')
-                except:
-                    try:
-                        username, key_id, secret, mfa_serial = line.split(',')
-                        mfa_serial = mfa_serial.rstrip()
-                    except:
-                        printError('Error, the CSV file is not properly formatted')
+            values = line.split(',')
+            for v in values:
+                if v.startswith('AKIA'):
+                    key_id = v.strip()
+                    secret_next = True
+                elif secret_next:
+                    secret = v.strip()
+                    secret_next = False
+                elif re_mfa_serial_format.match(v):
+                    mfa_serial = v.strip()
     return key_id.rstrip(), secret.rstrip(), mfa_serial
 
 #
