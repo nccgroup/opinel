@@ -32,6 +32,7 @@ except ImportError:
 # Import third-party packages
 from botocore.session import Session
 import boto3
+from boto3 import __version__ as BOTO3_VERSION
 import requests
 
 
@@ -53,6 +54,7 @@ re_mfa_serial_format = re.compile(mfa_serial_format)
 re_gov_region = re.compile(r'(.*?)-gov-(.*?)')
 re_cn_region = re.compile(r'^cn-(.*?)')
 re_opinel = re.compile(r'^opinel>=([0-9.]+),<([0-9.]+).*')
+re_boto3 = re.compile(r'^boto3>=([0-9.]+)(,<([0-9.]+).*)?')
 re_port_range = re.compile(r'(\d+)\-(\d+)')
 re_single_port = re.compile(r'(\d+)')
 
@@ -181,48 +183,44 @@ def build_region_list(service, chosen_regions = [], partition_name = 'aws'):
     else:
         return regions
 
-#
-# Check boto version
-#
-def check_boto3_version():
-    printInfo('Checking the version of boto...')
-    # TODO: read that from requirements file...
-    min_boto3_version = '1.1.1'
-    latest_boto3_version = 0
-    if boto3.__version__ < min_boto3_version:
-        printError('Error: the version of boto3 installed on this system (%s) is too old. Boto version %s or newer is required.' % (boto3.__version__, min_boto3_version))
-        return False
-    else:
-        try:
-            # Warn users who have not the latest version of boto installed
-            release_tag_regex = re.compile('(\d+)\.(\d+)\.(\d+)')
-            tags = requests.get('https://api.github.com/repos/boto/boto3/tags').json()
-            for tag in tags:
-                if release_tag_regex.match(tag['name']) and tag['name'] > latest_boto3_version:
-                    latest_boto3_version = tag['name']
-            if boto3.__version__ < latest_boto3_version:
-                printError('Warning: the version of boto installed (%s) is not the latest available (%s). Consider upgrading to ensure that all features are enabled.' % (boto3.__version__, latest_boto3_version))
-        except Exception as e:
-            printError('Warning: connection to the Github API failed.')
-            printException(e)
-    return True
 
-def check_opinel_version(min_version, max_version = None):
-    if StrictVersion(OPINEL_VERSION) < StrictVersion(min_version):
-        printError('Error: the version of opinel installed on this system(%s) is too old. You need at least version %s to run this tool.' % (OPINEL_VERSION, min_version))
-        return False
-    return True
-
-def get_opinel_requirement(script_path):
+def check_requirements(script_path, ):
+    """
+    Check versions of opinel and boto3
+    :param script_path:
+    :return:
+    """
     script_dir = os.path.dirname(script_path)
+    opinel_min_version = opinel_max_version = boto3_min_version = boto3_max_version = None
     # Requirements file is either next to the script or in data/requirements
     requirements_file = os.path.join(script_dir, 'data/requirements.txt') if os.path.isfile(os.path.join(script_dir, 'data/requirements.txt')) else 'requirements.txt'
     with open(requirements_file, 'rt') as f:
-        for line in f.readlines():
-            opinel_requirements = re_opinel.match(line)
+        for requirement in f.readlines():
+            opinel_requirements = re_opinel.match(requirement)
             if opinel_requirements:
-                return opinel_requirements.groups()
-    return None
+                opinel_requirements = opinel_requirements.groups()
+                opinel_min_version = opinel_requirements[0]
+                opinel_max_version = opinel_requirements[1]
+            boto3_requirements = re_boto3.match(requirement)
+            if boto3_requirements:
+                boto3_requirements = boto3_requirements.groups()
+                boto3_min_version = boto3_requirements[0]
+                boto3_max_version = boto3_requirements[1]
+    if not check_versions(opinel_min_version, OPINEL_VERSION, opinel_max_version, 'opinel'):
+        return False
+    if not check_versions(boto3_min_version, BOTO3_VERSION, boto3_max_version, 'boto3'):
+        return False
+    return True
+
+
+def check_versions(min_version, installed_version, max_version, package_name):
+    if StrictVersion(installed_version) < StrictVersion(min_version):
+        printError('Error: the version of %s installed on this system (%s) is too old. You need at least version %s to run this tool.' % (package_name, OPINEL_VERSION, min_version))
+        return False
+    if max_version and StrictVersion(installed_version) >= StrictVersion(max_version):
+        printInfo('Warning: ther version of %s installed on this system (%s) is too recent; you may experience unexpected runtime errors as versions above %s have not been tested.' % (package_name, installed_version, max_version))
+    return True
+
 
 #
 # Connect to any service
