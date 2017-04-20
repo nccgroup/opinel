@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from opinel.utils.test import *
+from opinel.utils.conditions import *
 
 class TestOpinelConditionClass:
     """
