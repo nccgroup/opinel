@@ -31,6 +31,19 @@ class TestOpinelAWS:
         except:
             pass
 
+    def test_get_name(selfs):
+        pass
+        #get_name(src, dst, default_attribute):
+        src1 = {'Id': 'IdValue'}
+        src2 = {'Tags': [{'Key': 'Foo', 'Value': 'Bar'}, {'Key': 'Name', 'Value': 'TaggedName'}, {'Key': 'Opinel', 'Value': 'UnitTest'}], 'Id': 'IdValue'}
+        src3 = {'Tags': [{'Key': 'Foo', 'Value': 'Bar'}, {'Key': 'Fake', 'Value': 'TaggedName'}, {'Key': 'Opinel', 'Value': 'UnitTest'}], 'Id': 'IdValue'}
+        name = get_name(src1, {}, 'Id')
+        assert (name == 'IdValue')
+        name = get_name(src2, {}, 'Id')
+        assert (name == 'TaggedName')
+        name = get_name(src3, {}, 'Id')
+        assert (name == 'IdValue')
+
 
     def test_handle_truncated_response(self):
         creds = read_creds('travislike')

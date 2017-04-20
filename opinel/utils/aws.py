@@ -64,6 +64,26 @@ def connect_service(service, credentials, region_name = None, config = None, sil
     return api_client
 
 
+def get_name(src, dst, default_attribute):
+    """
+
+    :param src:
+    :param dst:
+    :param default_attribute:
+
+    :return:
+    """
+    name_found = False
+    if 'Tags' in src:
+        for tag in src['Tags']:
+            if tag['Key'] == 'Name' and tag['Value'] != '':
+                dst['name'] = tag['Value']
+                name_found = True
+    if not name_found:
+        dst['name'] = src[default_attribute]
+    return dst['name']
+
+
 def handle_truncated_response(callback, params, entities):
     """
     Handle truncated responses
