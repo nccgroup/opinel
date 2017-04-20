@@ -23,10 +23,17 @@ setup(
     long_description=open('README.rst').read(),
     author='l01cd3v',
     author_email='l01cd3v@gmail.com',
-    url='https://github.com/iSECPartners/opinel',
-    packages=find_packages(exclude=['tests*']),
+    url='https://github.com/nccgroup/opinel',
+    entry_points={
+        'console_scripts': [
+            'opinel_init_sts_session = opinel.__sts_session__:main'
+        ]
+    },
+    packages=[
+        'opinel'
+    ],
     package_data={
-        NAME: [
+        'opinel': [
             'data/*.json',
         ]
     },
