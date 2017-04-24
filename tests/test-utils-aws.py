@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 
 from opinel.utils.aws import *
-from opinel.utils.credentials import read_creds, read_creds_from_ec2_instance_metadata
+from opinel.utils.credentials import read_creds, read_creds_from_environment_variables
 
 
 class TestOpinelAWS:
 
     def setup(self):
-        self.creds = read_creds_from_ec2_instance_metadata()
+        self.creds = read_creds_from_environment_variables()
         if self.creds['AccessKeyId'] == None:
             self.creds = read_creds('travislike')
 

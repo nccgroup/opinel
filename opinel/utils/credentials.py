@@ -222,16 +222,14 @@ def read_creds_from_ec2_instance_metadata():
 # Read credentials from environment variables
 #
 def read_creds_from_environment_variables():
-    key_id = None
-    secret = None
-    session_token = None
+    creds = init_creds()
     # Check environment variables
     if 'AWS_ACCESS_KEY_ID' in os.environ and 'AWS_SECRET_ACCESS_KEY' in os.environ:
-        key_id = os.environ['AWS_ACCESS_KEY_ID']
-        secret = os.environ['AWS_SECRET_ACCESS_KEY']
+        creds['AccessKeyId'] = os.environ['AWS_ACCESS_KEY_ID']
+        creds['SecretAccessKey'] = os.environ['AWS_SECRET_ACCESS_KEY']
         if 'AWS_SESSION_TOKEN' in os.environ:
-            session_token = os.environ['AWS_SESSION_TOKEN']
-    return key_id, secret, session_token
+            creds['SessionToken'] = os.environ['AWS_SESSION_TOKEN']
+    return creds
 
 
 #

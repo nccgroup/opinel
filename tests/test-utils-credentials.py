@@ -6,7 +6,7 @@ from opinel.utils.credentials import *
 class TestOpinelCredentialsClass:
 
     def setup(self):
-        self.creds = read_creds_from_ec2_instance_metadata()
+        self.creds = read_creds_from_environment_variables()
         if self.creds['AccessKeyId'] == None:
             self.creds = read_creds('travislike')
 
@@ -84,10 +84,10 @@ class TestOpinelCredentialsClass:
         os.environ['AWS_SESSION_TOKEN'] = 'environment-session/////token'
         creds = read_creds_from_environment_variables()
         assert creds != None
-        assert type(creds) == tuple
-        assert creds[0] == 'environment-AKIAJJ5TE81PVO72WPTQ'
-        assert creds[1] == 'environment-67YkvxJ8Qx0EI97NvlIyM9kVz/uKddd0z0uGj123'
-        assert creds[2] == 'environment-session/////token'
+        assert type(creds) == dict
+        assert creds['AccessKeyId'] == 'environment-AKIAJJ5TE81PVO72WPTQ'
+        assert creds['SecretAccessKey'] == 'environment-67YkvxJ8Qx0EI97NvlIyM9kVz/uKddd0z0uGj123'
+        assert creds['SessionToken'] == 'environment-session/////token'
         return
 
     def test_read_profile_from_aws_config_file(self):
