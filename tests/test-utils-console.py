@@ -20,9 +20,15 @@ class TestOpinelUtilsConsoleClass:
 
     def test_printException(self):
         configPrintException(True)
-        printException(Exception('hello'))
+        try:
+            raise Exception('opinelunittest')
+        except Exception as e:
+            printException(e)
         configPrintException(False)
-        printException(Exception('hello'))
+        try:
+            raise Exception('opinelunittest')
+        except Exception as e:
+            printException(e)
 
 
     def test_printInfo(msg, newLine=True):
