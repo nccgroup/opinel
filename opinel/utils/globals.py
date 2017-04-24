@@ -28,7 +28,6 @@ def check_requirements(script_path, requirements_file = None):
     :return:
     """
     script_dir = os.path.dirname(script_path)
-    printError('Path: %s' % script_dir)
     opinel_min_version = opinel_max_version = boto3_min_version = boto3_max_version = None
     # Requirements file is either next to the script or in data/requirements
     if not requirements_file:
