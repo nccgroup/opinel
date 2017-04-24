@@ -1,4 +1,4 @@
 include LICENSE
 include README.rst
 include requirements.txt
-recursive-include opinel/data *.json
+recursive-include opinel/data *
