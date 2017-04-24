@@ -10,7 +10,7 @@ class TestOpinelCredentialsClass:
         if self.creds['AccessKeyId'] == None:
             self.creds = read_creds('travislike')
         else:
-            print('Found a key : %s' % creds['AccessKeyId'])
+            print('Found a key : %s' % self.creds['AccessKeyId'])
 
     def cmp(self, a, b):
         """
