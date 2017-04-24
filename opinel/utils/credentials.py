@@ -206,20 +206,17 @@ def read_creds_from_csv(filename):
 # Read credentials from EC2 instance metadata (IAM role)
 #
 def read_creds_from_ec2_instance_metadata():
-    key_id = None
-    secret = None
-    token = None
+    creds = init_creds()
     try:
         has_role = requests.get('http://169.254.169.254/latest/meta-data/iam/security-credentials', timeout = 1)
         if has_role.status_code == 200:
             iam_role = has_role.text
             credentials = requests.get('http://169.254.169.254/latest/meta-data/iam/security-credentials/%s/' % iam_role.strip()).json()
-            key_id = credentials['AccessKeyId']
-            secret = credentials['SecretAccessKey']
-            token = credentials['Token']
+            for c in ['AccessKeyId', 'SecretAccessKey', 'Token']:
+                creds[c] = credentials[c]
     except Exception as e:
         pass
-    return key_id, secret, token
+    return creds
 
 #
 # Read credentials from environment variables
@@ -386,8 +383,7 @@ def read_creds(profile_name, csv_file = None, mfa_serial_arg = None, mfa_code = 
         # Try reading credentials from environment variables (Issue #11) if the profile name is 'default'
         credentials['AccessKeyId'], credentials['SecretAccessKey'], credentials['SessionToken'] = read_creds_from_environment_variables()
     if ('AccessKeyId' not in credentials or not credentials['AccessKeyId']) and not csv_file:
-        # Read from EC2 instance metadata
-        credentials['AccessKeyId'], credentials['SecretAccessKey'], credentials['SessionToken'] = read_creds_from_ec2_instance_metadata()
+        credentials = read_creds_from_ec2_instance_metadata()
     if not credentials['AccessKeyId'] and not csv_file:
         # Lookup if a role is defined in ~/.aws/config
         role_arn, source_profile = read_profile_from_aws_config_file(profile_name)

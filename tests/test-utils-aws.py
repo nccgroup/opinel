@@ -1,10 +1,15 @@
 # -*- coding: utf-8 -*-
 
 from opinel.utils.aws import *
-from opinel.utils.credentials import read_creds
+from opinel.utils.credentials import read_creds, read_creds_from_ec2_instance_metadata
 
 
 class TestOpinelAWS:
+
+    def setup(self):
+        self.creds = read_creds_from_ec2_instance_metadata()
+        if self.creds['AccessKeyId'] == None:
+            self.creds = read_creds('travislike')
 
     def test_build_region_list(self):
         assert type(build_region_list('ec2', [])) == list
@@ -21,11 +26,11 @@ class TestOpinelAWS:
 
 
     def test_connect_service(self):
-        creds = read_creds('travislike')
-        client = connect_service('iam', creds)
-        client = connect_service('iam', creds, config={})
-        client = connect_service('iam', creds, silent=True)
-        client = connect_service('ec2', creds, 'us-east-1')
+#        creds = read_creds('travislike')
+        client = connect_service('iam', self.creds)
+        client = connect_service('iam', self.creds, config={})
+        client = connect_service('iam', self.creds, silent=True)
+        client = connect_service('ec2', self.creds, 'us-east-1')
         try:
             client = connect_service('opinelunittest', creds)
         except:
@@ -46,6 +51,6 @@ class TestOpinelAWS:
 
 
     def test_handle_truncated_response(self):
-        creds = read_creds('travislike')
-        iam_client = connect_service('iam', creds)
+#        creds = read_creds('travislike')
+        iam_client = connect_service('iam', self.creds)
         users = handle_truncated_response(iam_client.list_users, {'MaxItems': 5}, ['Users'])

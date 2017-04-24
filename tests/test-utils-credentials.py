@@ -4,9 +4,11 @@ import shutil
 from opinel.utils.credentials import *
 
 class TestOpinelCredentialsClass:
-    """
-    Test opinel.io.fs
-    """
+
+    def setup(self):
+        self.creds = read_creds_from_ec2_instance_metadata()
+        if self.creds['AccessKeyId'] == None:
+            self.creds = read_creds('travislike')
 
     def cmp(self, a, b):
         """
@@ -15,8 +17,8 @@ class TestOpinelCredentialsClass:
         return (a > b) - (a < b)
 
     def test_assume_role(self):
-        creds = read_creds('travislike')
-        assume_role('Scout2', creds, 'arn:aws:iam::179374595322:role/Scout2', 'opinelunittesting')
+        #creds = read_creds('travislike')
+        assume_role('Scout2', self.creds, 'arn:aws:iam::179374595322:role/Scout2', 'opinelunittesting')
 
     def test_get_cached_credentials_filename(selfs):
         get_cached_credentials_filename('Scout2', 'arn:aws:iam::179374595322:role/Scout2')
@@ -31,8 +33,8 @@ class TestOpinelCredentialsClass:
         assert 'TokenCode' in creds
 
     def test_init_sts_session(self):
-        creds = read_creds('travislike')
-        init_sts_session('travislike-sts', creds, 900, 'opinelunittesting', False)
+        #creds = read_creds('travislike')
+        init_sts_session('travislike-sts', self.creds, 900, 'opinelunittesting', False)
 
     def test_read_creds_from_aws_credentials_file(self):
         test_cases = [{'profile_name': 'l01cd3v-1','credentials_file': 'tests/data/credentials'}, {'profile_name': 'l01cd3v-2','credentials_file': 'tests/data/credentials'}, {'profile_name': 'l01cd3v-3','credentials_file': 'tests/data/credentials'}, {'profile_name': 'l01cd3v-4','credentials_file': 'tests/data/credentials'}]
@@ -124,4 +126,3 @@ class TestOpinelCredentialsClass:
     def test_read_creds(self):
         creds = read_creds('travislike')
         creds = read_creds('', csv_file='tests/data/accessKeys1.csv')
-# okay decompiling test-credentials.pyc
