@@ -77,7 +77,8 @@ def assume_role(role_name, credentials, role_arn, role_session_name):
     cached_credentials_filename = get_cached_credentials_filename(role_name, role_arn)
     #with open(cached_credentials_filename, 'wt+') as f:
     #   write_data_to_file(f, sts_response, True, False)
-
+    if not os.path.isfile(cached_credentials_filename):
+        os.makedirs(os.path.dirname(cached_credentials_filename))
     save_blob_as_json(cached_credentials_filename, sts_response, True, False) # blob, force_write, debug):
     return credentials
 
