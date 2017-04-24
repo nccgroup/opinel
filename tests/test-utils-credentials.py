@@ -9,6 +9,8 @@ class TestOpinelCredentialsClass:
         self.creds = read_creds_from_environment_variables()
         if self.creds['AccessKeyId'] == None:
             self.creds = read_creds('travislike')
+        else:
+            print('Found a key : %s' % creds['AccessKeyId'])
 
     def cmp(self, a, b):
         """
@@ -104,7 +106,6 @@ class TestOpinelCredentialsClass:
         show_profiles_from_aws_credentials_file(credentials_files=['tests/data/credentials'])
 
     def test_write_creds_to_aws_credentials_file(self):
-        printError('hahahahah')
         tmpcredentialsfile = 'tmpcredentialsfile'
         if os.path.isfile(tmpcredentialsfile):
             os.remove(tmpcredentialsfile)
