@@ -9,8 +9,6 @@ class TestOpinelCredentialsClass:
         self.creds = read_creds_from_environment_variables()
         if self.creds['AccessKeyId'] == None:
             self.creds = read_creds('travislike')
-        else:
-            print('Found a key : %s' % self.creds['AccessKeyId'])
 
     def cmp(self, a, b):
         """
@@ -18,25 +16,35 @@ class TestOpinelCredentialsClass:
         """
         return (a > b) - (a < b)
 
-    def test_assume_role(self):
-        #creds = read_creds('travislike')
-        assume_role('Scout2', self.creds, 'arn:aws:iam::179374595322:role/Scout2', 'opinelunittesting')
-
-    def test_get_cached_credentials_filename(selfs):
-        get_cached_credentials_filename('Scout2', 'arn:aws:iam::179374595322:role/Scout2')
-
-    def test_init_creds(self):
-        creds = init_creds()
+    def check_credentials_dict(self, creds):
         assert 'AccessKeyId' in creds
         assert 'SecretAccessKey' in creds
         assert 'SessionToken' in creds
         assert 'Expiration' in creds
-        assert 'SerialNumber' in creds
-        assert 'TokenCode' in creds
+        #assert 'SerialNumber' in creds
+        #assert 'TokenCode' in creds
+
+    def check_credentials_not_empty(self, creds):
+        assert (creds['AccessKeyId'].startswith('AKIA') or creds['AccessKeyId'].startswith('ASIA'))
+        assert (creds['SecretAccessKey'] != None)
+
+    def test_assume_role(self):
+        creds = assume_role('Scout2', self.creds, 'arn:aws:iam::179374595322:role/Scout2', 'opinelunittesting')
+        self.check_credentials_dict(creds)
+        self.check_credentials_not_empty(creds)
+        assert (creds['SessionToken'] != None)
+
+    def test_get_cached_credentials_filename(selfs):
+        filename = get_cached_credentials_filename('Scout2', 'arn:aws:iam::179374595322:role/Scout2')
+        assert(filename.endswith('.aws/cli/cache/Scout2--arn_aws_iam__179374595322_role-Scout2.json'))
+
+    def test_init_creds(self):
+        creds = init_creds()
+        self.check_credentials_dict(creds)
 
     def test_init_sts_session(self):
-        #creds = read_creds('travislike')
-        init_sts_session('travislike-sts', self.creds, 900, 'opinelunittesting', False)
+        creds = init_sts_session('travislike-sts', self.creds, 900, 'opinelunittesting', False)
+        self.check_credentials_dict(creds)
 
     def test_read_creds_from_aws_credentials_file(self):
         test_cases = [{'profile_name': 'l01cd3v-1','credentials_file': 'tests/data/credentials'}, {'profile_name': 'l01cd3v-2','credentials_file': 'tests/data/credentials'}, {'profile_name': 'l01cd3v-3','credentials_file': 'tests/data/credentials'}, {'profile_name': 'l01cd3v-4','credentials_file': 'tests/data/credentials'}]
