@@ -1,2 +1,4 @@
 [report]
-include = opinel/*.py
+include =   opinel/*.py
+            opinel/services/*.py
+            opinel/utils/*.py

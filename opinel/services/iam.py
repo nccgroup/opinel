@@ -113,12 +113,6 @@ def add_user_to_common_group(iam_client, current_groups, common_groups, user, fo
             sys.stdout.flush()
 
 #
-# Connect to IAM
-#
-def connect_iam(credentials, silent = False):
-    return connect_service('IAM', credentials, silent)
-
-#
 # Create default groups
 #
 def create_default_groups(iam_client, common_groups, category_groups, dry_run):
