@@ -1,20 +1,20 @@
 language: python
 
 python:
-  - "2.7"
-  - "3.3"
-  - "3.4"
-  - "3.5"
-  - "3.6"
-  - "nightly"
+    - "2.7"
+    - "3.3"
+    - "3.4"
+    - "3.5"
+    - "3.6"
+    - "nightly"
 
 before_script:
-  - pip install -r requirements.txt
-  - pip install coveralls
+    - pip install -r requirements.txt
+    - pip install coveralls
 
 script:
-  - nosetests --with-coverage tests/test-utils-globals.py tests/test-utils-console.py tests/test-utils-aws.py tests/test-utils-fs.py tests/test-utils-credentials.py tests/test-utils-conditions.py
+    - nosetests --with-coverage tests/test-utils-globals.py tests/test-utils-console.py tests/test-utils-aws.py tests/test-utils-fs.py tests/test-utils-credentials.py tests/test-utils-conditions.py || 1
 
 after success:
-  - coveralls
-  - bash <(curl -s https://codecov.io/bash)
+    - coveralls
+    - bash <(curl -s https://codecov.io/bash)
