@@ -26,11 +26,11 @@ setup(
     url='https://github.com/nccgroup/opinel',
     entry_points={
         'console_scripts': [
-            'opinel_init_sts_session = opinel.__init_sts_session__:main'
+            'opinel_init_sts_session = opinel.console_scripts.init_sts_session:main'
         ]
     },
     packages=[
-        'opinel', 'opinel.utils', 'opinel.services'
+        'opinel', 'opinel.console_scripts', 'opinel.utils', 'opinel.services'
     ],
     package_data={
         'opinel': [
