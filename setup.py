@@ -24,13 +24,8 @@ setup(
     author='l01cd3v',
     author_email='l01cd3v@gmail.com',
     url='https://github.com/nccgroup/opinel',
-    entry_points={
-        'console_scripts': [
-            'opinel_init_sts_session = opinel.console_scripts.init_sts_session:main'
-        ]
-    },
     packages=[
-        'opinel', 'opinel.console_scripts', 'opinel.utils', 'opinel.services'
+        'opinel', 'opinel.utils', 'opinel.services'
     ],
     package_data={
         'opinel': [
