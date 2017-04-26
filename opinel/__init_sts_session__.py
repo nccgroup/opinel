@@ -27,7 +27,6 @@ def main():
     configPrintException(args.debug)
 
     # Check version of opinel
-    print('Path: %s' % os.path.realpath(__file__))
     if not check_requirements(os.path.realpath(__file__)):
         return 42
 
