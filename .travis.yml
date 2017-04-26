@@ -13,6 +13,7 @@ before_script:
 
 script:
     - nosetests --with-coverage tests/test-utils-globals.py tests/test-utils-console.py tests/test-utils-aws.py tests/test-utils-fs.py tests/test-utils-credentials.py tests/test-utils-conditions.py || 1
+    - nosetests --with-coverage tests/test-services-cloudtrail.py
 
 after success:
     - coveralls
