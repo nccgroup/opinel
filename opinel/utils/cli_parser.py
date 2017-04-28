@@ -12,7 +12,7 @@ class OpinelArgumentParser(object):
         self.parser = argparse.ArgumentParser()
 
 
-    def add_argument(self, argument_name, default_args = None):
+    def add_argument(self, argument_name, help_string = None, default_args = None):
         if argument_name == 'debug':
             self.parser.add_argument('--debug',
                                 dest='debug',
@@ -80,6 +80,14 @@ class OpinelArgumentParser(object):
                                 dest='csv_credentials',
                                 default=None,
                                 help='')
+        elif argument_name == 'user-name':
+            self.parser.add_argument('--user-name',
+                                dest='user_name',
+                                default=[None],
+                                help='Name of the user.' if not help_string else help_string)
+
+
+
         else:
             raise Exception('Invalid parameter name %s' % argument_name)
 
