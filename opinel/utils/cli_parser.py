@@ -18,25 +18,25 @@ class OpinelArgumentParser(object):
                                 dest='debug',
                                 default=False,
                                 action='store_true',
-                                help='Print the stack trace when exception occurs')
+                                help='Print the stack trace when exception occurs' if not help_string else help_string)
         elif argument_name == 'dry-run':
             self.parser.add_argument('--dry-run',
                                 dest='dry_run',
                                 default=False,
                                 action='store_true',
-                                help='Executes read-only actions (check status, describe*, get*, list*...)')
+                                help='Executes read-only actions (check status, describe*, get*, list*...)' if not help_string else help_string)
         elif argument_name == 'profile':
             self.parser.add_argument('--profile',
                                 dest='profile',
                                 default= ['default'],
                                 nargs='+',
-                                help='Name of the profile')
+                                help='Name of the profile' if not help_string else help_string)
         elif argument_name == 'regions':
             self.parser.add_argument('--regions',
                                 dest='regions',
                                 default=[],
                                 nargs='+',
-                                help='Name of regions to run the tool in, defaults to all')
+                                help='Name of regions to run the tool in, defaults to all' if not help_string else help_string)
         elif argument_name == 'partition-name':
             self.parser.add_argument('--partition-name',
                                 dest='partition_name',
@@ -47,47 +47,44 @@ class OpinelArgumentParser(object):
                                 dest='vpc',
                                 default=[],
                                 nargs='+',
-                                help='Name of VPC to run the tool in, defaults to all')
+                                help='Name of VPC to run the tool in, defaults to all' if not help_string else help_string)
         elif argument_name == 'force':
             self.parser.add_argument('--force',
                                 dest='force_write',
                                 default=False,
                                 action='store_true',
-                                help='Overwrite existing files')
+                                help='Overwrite existing files' if not help_string else help_string)
         elif argument_name == 'ip-ranges':
             self.parser.add_argument('--ip-ranges',
                                 dest='ip_ranges',
                                 default=[],
                                 nargs='+',
-                                help='Config file(s) that contain your known IP ranges.')
+                                help='Config file(s) that contain your known IP ranges.' if not help_string else help_string)
         elif argument_name == 'ip-ranges-name-key':
             self.parser.add_argument('--ip-ranges-name-key',
                                 dest='ip_ranges_name_key',
                                 default='name',
-                                help='Name of the key containing the display name of a known CIDR.')
+                                help='Name of the key containing the display name of a known CIDR.' if not help_string else help_string)
         elif argument_name == 'mfa-serial':
             self.parser.add_argument('--mfa-serial',
                                 dest='mfa_serial',
                                 default=None,
-                                help='')
+                                help='ARN of the user\'s MFA device' if not help_string else help_string)
         elif argument_name == 'mfa-code':
             self.parser.add_argument('--mfa-code',
                                 dest='mfa_code',
                                 default=None,
-                                help='')
+                                help='Six-digit code displayed on the MFA device.' if not help_string else help_string)
         elif argument_name == 'csv-credentials':
             self.parser.add_argument('--csv-credentials',
                                 dest='csv_credentials',
                                 default=None,
-                                help='')
+                                help='Path to a CSV file containing the access key ID and secret key' if not help_string else help_string)
         elif argument_name == 'user-name':
             self.parser.add_argument('--user-name',
                                 dest='user_name',
                                 default=[None],
                                 help='Name of the user.' if not help_string else help_string)
-
-
-
         else:
             raise Exception('Invalid parameter name %s' % argument_name)
 
