@@ -84,6 +84,21 @@ def get_name(src, dst, default_attribute):
     return dst['name']
 
 
+def get_caller_identity(credentials):
+    api_client = connect_service('sts', credentials)
+    return api_client.get_caller_identity()
+
+
+def get_username(credentials):
+    caller_identity = get_caller_identity(credentials)
+    return caller_identity['Arn'].split('/')[-1]
+
+
+def get_aws_account_id(credentials):
+    caller_identity = get_caller_identity(credentials)
+    return caller_identity['Arn'].split(':')[4]
+
+
 def handle_truncated_response(callback, params, entities):
     """
     Handle truncated responses
@@ -98,6 +113,7 @@ def handle_truncated_response(callback, params, entities):
     for entity in entities:
         results[entity] = []
     while True:
+        marker_found = False
         response = callback(**params)
         for entity in entities:
             if entity in response:
@@ -105,6 +121,7 @@ def handle_truncated_response(callback, params, entities):
         for marker_name in ['NextToken', 'Marker']:
             if marker_name in response and response[marker_name]:
                 params[marker_name] = response[marker_name]
-        else:
+                marker_found = True
+        if not marker_found:
             break
     return results
