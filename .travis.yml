@@ -23,5 +23,5 @@ script:
     - nosetests --with-coverage tests/test-services-iam.py
     - nosetests --with-coverage tests/test-services-s3.py
 
-after success:
+after_success:
     - coveralls
