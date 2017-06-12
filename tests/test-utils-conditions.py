@@ -7,6 +7,9 @@ class TestOpinelConditionClass:
     Test opinel.condition
     """
 
+    def test___prepare_age_test(self):
+        pass
+
     def test_pass_condition(self):
 
         assert pass_condition('a', 'equal', 'a') == True

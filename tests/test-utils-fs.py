@@ -31,6 +31,11 @@ class TestOpinelFsClass:
         assert type(test) == dict
         assert test['-2'] == 'TEST'
 
+
+    def test_read_default_args(self):
+        pass
+
+
     def test_read_ip_ranges(self):
         read_ip_ranges('ip-ranges.json', local_file=False)
         read_ip_ranges('tests/data/ip-ranges-1.json', local_file=True)
@@ -84,4 +89,3 @@ class TestOpinelFsClass:
             os.remove('ip-ranges-default.json')
         save_ip_ranges('default', {'a': 'b'}, False, False)
         save_ip_ranges('default', {'a': 'b'}, True, True)
-# okay decompiling test-fs.pyc
