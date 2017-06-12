@@ -12,7 +12,10 @@ before_script:
     - pip install coveralls
 
 script:
-    - nosetests --with-coverage tests/test-utils-globals.py tests/test-utils-console.py tests/test-utils-aws.py tests/test-utils-fs.py tests/test-utils-credentials.py tests/test-utils-conditions.py || 1
+    - nosetests --with-coverage tests/test-tests.py
+    - nosetests --with-coverage tests/test-utils-globals.py \
+                                tests/test-utils-console.py \
+                                tests/test-utils-aws.py tests/test-utils-fs.py tests/test-utils-credentials.py tests/test-utils-conditions.py
     - nosetests --with-coverage tests/test-services-cloudtrail.py tests/test-services-s3.py
 
 after success:
