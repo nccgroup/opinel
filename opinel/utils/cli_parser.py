@@ -83,13 +83,20 @@ class OpinelArgumentParser(object):
         elif argument_name == 'user-name':
             self.parser.add_argument('--user-name',
                                 dest='user_name',
-                                default=[None],
+                                default=[],
+                                nargs='+',
                                 help='Name of the user.' if not help_string else help_string)
         elif argument_name == 'bucket-name':
             self.parser.add_argument('--bucket-name',
                                 dest='bucket_name',
                                 default=[None],
                                 help='Name of the s3 bucket.' if not help_string else help_string)
+        elif argument_name == 'group-name':
+            self.parser.add_argument('--group-name',
+                                dest='group_name',
+                                default=[],
+                                nargs='+',
+                                help='Name of the IAM group.' if not help_string else help_string)
         else:
             raise Exception('Invalid parameter name %s' % argument_name)
 
