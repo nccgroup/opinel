@@ -22,11 +22,15 @@ class TestOpinelUtils:
 
 
     def test_check_requirements(self): # script_path):
-        check_requirements(os.path.realpath(__file__))
+        assert (check_requirements(os.path.realpath(__file__)) == True)
+        assert (check_requirements(os.path.realpath(__file__), 'tests/data/requirements1.txt') == True)
+        assert (check_requirements(os.path.realpath(__file__), 'tests/data/requirements2.txt') == False)
+        assert (check_requirements(os.path.realpath(__file__), 'tests/data/requirements3.txt') == False)
 
 
     def test_check_versions(self):
-        check_versions('1.0.0', '1.4.2', '2.0.0', 'opinelunittest')
-        check_versions('1.0.0', '2.4.2', '2.0.0', 'opinelunittest')
-        check_versions('1.0.0', '0.4.2', '2.0.0', 'opinelunittest')
-        check_versions(None, None, None, None)
+        assert (check_versions('1.0.0', '1.4.2', '2.0.0', 'opinelunittest') == True)
+        assert (check_versions('1.0.0', '2.4.2', '2.0.0', 'opinelunittest') == True)
+        assert (check_versions('1.0.0', '2.4.2', '2.0.0', 'opinelunittest', True) == False)
+        assert (check_versions('1.0.0', '0.4.2', '2.0.0', 'opinelunittest') == False)
+        assert (check_versions(None, None, None, None) == True)

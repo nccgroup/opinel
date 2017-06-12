@@ -1,12 +1,12 @@
-# -*- coding: utf-8 -*-
-
+#                            -*- coding: utf-8 -*-
+                            
 import boto3
 from distutils.version import StrictVersion
 import os
 import re
 
 from opinel import __version__ as OPINEL_VERSION
-from opinel.utils.console import printError, printInfo
+from opinel.utils.console import printError
 
 
 ########################################
@@ -51,7 +51,7 @@ def check_requirements(script_path, requirements_file = None):
     return True
 
 
-def check_versions(min_version, installed_version, max_version, package_name):
+def check_versions(min_version, installed_version, max_version, package_name, strict = False):
     """
 
     :param min_version:
@@ -68,7 +68,10 @@ def check_versions(min_version, installed_version, max_version, package_name):
         printError('Error: the version of %s installed on this system (%s) is too old. You need at least version %s to run this tool.' % (package_name, OPINEL_VERSION, min_version))
         return False
     if max_version and StrictVersion(installed_version) >= StrictVersion(max_version):
-        printInfo('Warning: ther version of %s installed on this system (%s) is too recent; you may experience unexpected runtime errors as versions above %s have not been tested.' % (package_name, installed_version, max_version))
+        printError('Warning: ther version of %s installed on this system (%s) is too recent; you may experience unexpected runtime errors as versions above %s have not been tested.' % (package_name, installed_version, max_version))
+        if strict:
+            printError('Warning treated as error.')
+            return False
     return True
 
 
