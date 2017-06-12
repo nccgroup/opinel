@@ -11,6 +11,7 @@ class TestOpinelAWS:
         if self.creds['AccessKeyId'] == None:
             self.creds = read_creds('travislike')
 
+
     def test_build_region_list(self):
         assert type(build_region_list('ec2', [])) == list
         assert type(build_region_list('ec2', [], 'aws-us-gov')) == list
@@ -56,8 +57,6 @@ class TestOpinelAWS:
 
 
     def test_get_name(self):
-        pass
-        #get_name(src, dst, default_attribute):
         src1 = {'Id': 'IdValue'}
         src2 = {'Tags': [{'Key': 'Foo', 'Value': 'Bar'}, {'Key': 'Name', 'Value': 'TaggedName'}, {'Key': 'Opinel', 'Value': 'UnitTest'}], 'Id': 'IdValue'}
         src3 = {'Tags': [{'Key': 'Foo', 'Value': 'Bar'}, {'Key': 'Fake', 'Value': 'TaggedName'}, {'Key': 'Opinel', 'Value': 'UnitTest'}], 'Id': 'IdValue'}
@@ -76,4 +75,5 @@ class TestOpinelAWS:
 
     def test_handle_truncated_response(self):
         iam_client = connect_service('iam', self.creds)
-        users = handle_truncated_response(iam_client.list_users, {'MaxItems': 5}, ['Users'])
+        users = handle_truncated_response(iam_client.list_users, {'MaxItems': 5}, ['Users'])['Users']
+        assert (len(users) > 5)
