@@ -66,8 +66,8 @@ def assume_role(role_name, credentials, role_arn, role_session_name):
     }
     # MFA used ?
     if 'mfa_serial' in credentials and 'mfa_code' in credentials:
-      sts_args['TokenCode'] = credentials['TokenCode']
-      sts_args['SerialNumber'] = credentials['SerialNumber']
+      sts_args['TokenCode'] = credentials['mfa_code']
+      sts_args['SerialNumber'] = credentials['mfa_serial']
     # External ID used ?
     if 'ExternalId' in credentials and credentials['ExternalId']:
       sts_args['ExternalId'] = credentials['ExternalId']

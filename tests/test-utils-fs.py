@@ -18,8 +18,10 @@ class TestOpinelFsClass:
 
     def test_CustomJSONEncoder(self):
         date = datetime.datetime(2017, 06, 12)
-        blob = {'Foo': 'bar', 'Datetime': date}
-        print('%s' % json.dumps(blob, cls=CustomJSONEncoder))
+        blob1 = {'foo': 'bar', 'date': date}
+        print('%s' % json.dumps(blob1, cls=CustomJSONEncoder))
+        blob2 = {'foo': 'bar', 'baz': {'foo': 'bar'}}
+        print('%s' % json.dumps(blob2, cls=CustomJSONEncoder))
 
     def test_load_data(self):
         test = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'data/protocols.json')

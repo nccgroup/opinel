@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import copy
 import shutil
 from opinel.utils.credentials import *
 
@@ -33,6 +34,15 @@ class TestOpinelCredentialsClass:
         self.check_credentials_dict(creds)
         self.check_credentials_not_empty(creds)
         assert (creds['SessionToken'] != None)
+        fake_creds = copy.deepcopy(self.creds)
+        fake_creds['mfa_serial'] = 'arn:aws:iam::179374595322:mfa/fake'
+        fake_creds['mfa_code'] = '123456'
+        fake_creds['ExternalId'] = 'opinelunittesting'
+        try:
+            creds = assume_role('Scout2', fake_creds, 'arn:aws:iam::179374595322:role/Scout2', 'opinelunittesting')
+        except Exception as e:
+            pass
+
 
     def test_get_cached_credentials_filename(selfs):
         filename = get_cached_credentials_filename('Scout2', 'arn:aws:iam::179374595322:role/Scout2')
@@ -45,6 +55,14 @@ class TestOpinelCredentialsClass:
     def test_init_sts_session(self):
         creds = init_sts_session('travislike-sts', self.creds, 900, 'opinelunittesting', False)
         self.check_credentials_dict(creds)
+        fake_creds = copy.deepcopy(self.creds)
+        fake_creds['SerialNumber'] = 'arn:aws:iam::179374595322:mfa/fake'
+        fake_creds['TokenCode'] = '123456'
+        try:
+            creds = init_sts_session('travislike-sts', fake_creds, 900, 'opinelunittesting', False)
+        except:
+            pass
+
 
     def test_read_creds_from_aws_credentials_file(self):
         test_cases = [{'profile_name': 'l01cd3v-1','credentials_file': 'tests/data/credentials'}, {'profile_name': 'l01cd3v-2','credentials_file': 'tests/data/credentials'}, {'profile_name': 'l01cd3v-3','credentials_file': 'tests/data/credentials'}, {'profile_name': 'l01cd3v-4','credentials_file': 'tests/data/credentials'}]
