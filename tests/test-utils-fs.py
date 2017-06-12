@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+import datetime
+
 from opinel.utils.fs import *
 from opinel.utils.console import configPrintException
 
@@ -15,7 +17,9 @@ class TestOpinelFsClass:
         return (a > b) - (a < b)
 
     def test_CustomJSONEncoder(self):
-        pass
+        date = datetime.datetime(2017, 06, 12)
+        blob = {'Foo': 'bar', 'Datetime': date}
+        print('%s' % json.dumps(blob, cls=CustomJSONEncoder))
 
     def test_load_data(self):
         test = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'data/protocols.json')
