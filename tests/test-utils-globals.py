@@ -29,3 +29,4 @@ class TestOpinelUtils:
         check_versions('1.0.0', '1.4.2', '2.0.0', 'opinelunittest')
         check_versions('1.0.0', '2.4.2', '2.0.0', 'opinelunittest')
         check_versions('1.0.0', '0.4.2', '2.0.0', 'opinelunittest')
+        check_versions(None, None, None, None)
