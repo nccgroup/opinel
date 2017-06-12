@@ -21,3 +21,5 @@ class TestOpinelServicesIAM:
     def test_show_access_keys(self):
         pass
 
+    def test_get_aws_account_id(self):
+        pass
