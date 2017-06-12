@@ -47,8 +47,8 @@ class TestOpinelAWS:
     def test_get_caller_identity(self):
         result = {
             "Account": "179374595322",
-            "UserId": [ "AIDAISSRBZ2MQ4EEY25GM", "AIDAJ3IA46RH552IUMC6Q" ],
-            "Arn": [ "arn:aws:iam::179374595322:user/CI-local", "arn:aws:iam::179374595322:user/CI-travis" ]
+            "UserId": [ "AIDAISSRBZ2MQ4EEY25GM", "AIDAI6OKAM7LYCYPYQVFK" ],
+            "Arn": [ "arn:aws:iam::179374595322:user/CI-local", "arn:aws:iam::179374595322:user/CI-travis-opinel" ]
         }
         identity = get_caller_identity(self.creds)
         assert (identity['Account'] == result['Account'])
@@ -70,7 +70,7 @@ class TestOpinelAWS:
 
     def test_get_username(self):
         username = get_username(self.creds)
-        assert (username == 'CI-local' or username == 'CI-travis')
+        assert (username == 'CI-local' or username == 'CI-travis-opinel')
 
 
     def test_handle_truncated_response(self):
