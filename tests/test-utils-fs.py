@@ -17,7 +17,7 @@ class TestOpinelFsClass:
         return (a > b) - (a < b)
 
     def test_CustomJSONEncoder(self):
-        date = datetime.datetime(2017, 06, 12)
+        date = datetime.datetime(2017, 6, 12)
         blob1 = {'foo': 'bar', 'date': date}
         print('%s' % json.dumps(blob1, cls=CustomJSONEncoder))
         blob2 = {'foo': 'bar', 'baz': {'foo': 'bar'}}
