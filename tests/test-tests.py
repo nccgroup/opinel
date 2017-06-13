@@ -35,6 +35,16 @@ class TestTests:
                 printError('Missing file: %s' % test_filename)
                 assert (False)
 
+    def test_call_each_testfile(self):
+        with open('.travis.yml', 'rt') as f:
+            contents = f.read()
+        for filename in self.submodules:
+            part1, part2 = self.module_filename_to_parts(filename)
+            test_filename = 'tests/test-%s-%s.py' % (part1, part2)
+            check = re.findall(r'%s' % test_filename, contents)
+            if not check:
+                printError('Missing call in Travis configuration: %s' % test_filename)
+                assert (False)
 
     def test_one_testcase_per_function(self):
         missing_testcase = False
