@@ -79,8 +79,13 @@ class TestOpinelUtilsConsoleClass:
         assert prompt_4_value('prompt_4_value', choices=['a', 'b', 'c'], no_confirm=True, authorize_list=True, input='a,b') == 'a,b'
         assert prompt_4_value('prompt_4_value', choices=['a', 'b', 'c'], required=True, no_confirm=True, input=['', 'b']) == 'b'
         assert prompt_4_value('prompt_4_value', choices=['a', 'b', 'c'], required=True, no_confirm=True, input=['invalid', 'b']) == 'b'
+        assert prompt_4_value('prompt_4_value', choices=['a', 'b', 'c'], no_confirm=True, input='a,c') == None
+        assert prompt_4_value('prompt_4_value', choices=['a', 'b', 'c'], no_confirm=True, input='a,b', authorize_list = True) == 'a,b'
+        assert prompt_4_value('prompt_4_value', choices=['a', 'b', 'c'], no_confirm=True, input='a,e', authorize_list = True) == None
         assert prompt_4_value('prompt_4_value', regex=re_mfa_serial_format, regex_format=mfa_serial_format, required=True, input=['inputvalue', 'arn:aws:iam::123456789012:mfa/username', 'y']) == 'arn:aws:iam::123456789012:mfa/username'
         assert prompt_4_value('prompt_4_value', regex=re_mfa_serial_format, regex_format=mfa_serial_format, required=False, input=['inputvalue', '', 'y']) == ''
+
+
 
 
     def test_prompt_4_yes_no(self):

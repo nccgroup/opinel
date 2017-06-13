@@ -146,7 +146,7 @@ def prompt_4_overwrite(filename, force_write, input = None):
     return prompt_4_yes_no('File \'{}\' already exists. Do you want to overwrite it'.format(filename), input = input)
 
 
-def prompt_4_value(question, choices = None, default = None, display_choices = True, display_indices = False, authorize_list = False, is_question = False, no_confirm = False, required = True, regex = None, regex_format = '', input = None):
+def prompt_4_value(question, choices = None, default = None, display_choices = True, display_indices = False, authorize_list = False, is_question = False, no_confirm = False, required = True, regex = None, regex_format = '', max_laps = 5, input = None):
     """
     Prompt for a value
                                         .                    .
@@ -161,15 +161,20 @@ def prompt_4_value(question, choices = None, default = None, display_choices = T
     :param required:                    Set to false if an empty answer is authorized
     :param regex:                       TODO
     :param regex_format                 TODO
+    :param max_laps:                    Exit after N laps
     :param input:                       Used for unit testing
 
     :return:
     """
     if choices and display_choices and not display_indices:
         question = question + ' (' + '/'.join(choices) + ')'
+    lap_n = 0
     while True:
+        if lap_n >= max_laps:
+            printError('Automatically abording prompt loop after 5 failures')
+            return None
+        lap_n += 1
         can_return = False
-        #time.sleep(1)
         # Display the question, choices, and prompt for the answer
         if is_question:
             question = question + '? '
@@ -181,7 +186,6 @@ def prompt_4_value(question, choices = None, default = None, display_choices = T
         choice = prompt(input)
         # Set the default value if empty choice
         if not choice or choice == '':
-            print('a')
             if default:
                 if no_confirm or prompt_4_yes_no('Use the default value (' + default + ')'):
                     #return default
@@ -193,7 +197,6 @@ def prompt_4_value(question, choices = None, default = None, display_choices = T
                 printError('Error: you cannot leave this parameter empty.')
         # Validate the value against a whitelist of choices
         elif choices:
-            print('b')
             user_choices = [item.strip() for item in choice.split(',')]
             if not authorize_list and len(user_choices) > 1:
                 printError('Error: multiple values are not supported; please enter a single value.')
