@@ -4,6 +4,8 @@ from __future__ import print_function
 import datetime
 import json
 import os
+import re
+import sys
 
 from opinel.utils.console import printException, prompt_4_overwrite
 from opinel.utils.conditions import pass_condition
@@ -19,7 +21,6 @@ class CustomJSONEncoder(json.JSONEncoder):
             return str(o)
         else:
             return o.__dict__
-        # TODO 3 statements
 
 
 def load_data(data_file, key_name = None, local_file = False):
@@ -45,6 +46,35 @@ def load_data(data_file, key_name = None, local_file = False):
     if key_name:
         data = data[key_name]
     return data
+
+
+
+def read_default_args(recipe_name):
+    """
+    Read default argument values for a recipe
+
+    :param recipe_name:
+    :return:
+    """
+    profile_name = 'default'
+    # h4ck to have an early read of the profile name
+    for i, arg in enumerate(sys.argv):
+        if arg == '--profile' and len(sys.argv) >= i + 1:
+            profile_name = sys.argv[i + 1]
+    default_args = {}
+    recipes_dir = os.path.join(os.path.join(os.path.expanduser('~'), '.aws'), 'recipes')
+    recipe_file = os.path.join(recipes_dir, profile_name + '.json')
+    print(recipe_file)
+    if os.path.isfile(recipe_file):
+        with open(recipe_file, 'rt') as f:
+            config = json.load(f)
+        for key in config:
+            if recipe_name.endswith(key):
+                default_args = config[key]
+# TODO: not sure what that was for...
+#            elif key == parser.prog:
+#                default_args.update(config[key])
+    return default_args
 
 
 def read_ip_ranges(filename, local_file = True, conditions = [], ip_only = False):
