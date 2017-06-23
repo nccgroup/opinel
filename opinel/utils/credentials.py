@@ -9,6 +9,7 @@ import fileinput
 import os
 import re
 import requests # TODO: get rid of that and make sure urllib2 validates certs ?
+import string
 
 from opinel.utils.console import printException, printError, printInfo
 from opinel.utils.console import prompt_4_mfa_code
@@ -109,6 +110,18 @@ def get_profiles_from_aws_credentials_file(credentials_files = [aws_credentials_
                     if groups:
                         profiles.append(groups.groups()[0])
     return sorted(profiles)
+
+
+def generate_password(length = 16):
+    """
+    Generate a password using random characters from uppercase, lowercase, digits, and symbols
+
+    :param length:                      Length of the password to be generated
+    :return:                            The random password
+    """
+    chars = string.ascii_letters + string.digits + '!@#$%^&*()_+-=[]{};:,<.>?|'
+    modulus = len(chars)
+    return ''.join(chars[i % modulus] for i in map(ord, os.urandom(16)))
 
 
 #

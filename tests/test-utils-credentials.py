@@ -43,10 +43,13 @@ class TestOpinelCredentialsClass:
         except Exception as e:
             pass
 
-
-    def test_get_cached_credentials_filename(selfs):
+    def test_get_cached_credentials_filename(self):
         filename = get_cached_credentials_filename('Scout2', 'arn:aws:iam::179374595322:role/Scout2')
         assert(filename.endswith('.aws/cli/cache/Scout2--arn_aws_iam__179374595322_role-Scout2.json'))
+
+    def test_generate_password(self):
+        password = generate_password(16)
+        assert len(password) == 16
 
     def test_init_creds(self):
         creds = init_creds()

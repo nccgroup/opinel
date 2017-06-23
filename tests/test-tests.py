@@ -67,7 +67,14 @@ class TestTests:
             for function in submodule_functions:
                 test_function = 'test_%s' % function
                 if test_function not in testcase_functions:
-                    printError('Missing test case in %s: %s' % (testcase_filename, test_function))
-                    missing_testcase = True
+                    ordered_case_found = False
+                    regex = re.compile('test_\d+_%s' % function)
+                    for testcase_function in testcase_functions:
+                        if regex.match(testcase_function):
+                            ordered_case_found = True
+                            break
+                    if not ordered_case_found:
+                        printError('Missing test case in %s: %s' % (testcase_filename, test_function))
+                        missing_testcase = True
         if missing_testcase:
             assert (False)
