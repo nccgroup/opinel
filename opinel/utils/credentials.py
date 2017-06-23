@@ -121,7 +121,11 @@ def generate_password(length = 16):
     """
     chars = string.ascii_letters + string.digits + '!@#$%^&*()_+-=[]{};:,<.>?|'
     modulus = len(chars)
-    return ''.join(chars[i % modulus] for i in map(ord, os.urandom(16)))
+    chars = os.urandom(16)
+    if type(chars[0]) == str:
+        return ''.join(chars[i % modulus] for i in map(ord, chars))
+    else:
+        return ''.join(chars[i % modulus] for i in chars)
 
 
 #
