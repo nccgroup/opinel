@@ -383,7 +383,7 @@ def read_creds(profile_name, csv_file = None, mfa_serial_arg = None, mfa_code = 
     elif profile_name == 'default':
         # Try reading credentials from environment variables (Issue #11) if the profile name is 'default'
         credentials = read_creds_from_environment_variables()
-    if ('AccessKeyId' not in credentials or not credentials['AccessKeyId']) and not csv_file:
+    if ('AccessKeyId' not in credentials or not credentials['AccessKeyId']) and not csv_file and profile == 'default':
         credentials = read_creds_from_ec2_instance_metadata()
     if not credentials['AccessKeyId'] and not csv_file:
         # Lookup if a role is defined in ~/.aws/config
