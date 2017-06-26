@@ -149,6 +149,9 @@ def read_default_args(tool_name):
         with open(opinel_arg_file, 'rt') as f:
             all_args = json.load(f)
         for target in all_args:
-            if tool_name.endswith(target) or target == 'shared':
+            if tool_name.endswith(target):
                 default_args.update(all_args[target])
+        for k in all_args['shared']:
+            if k not in default_args:
+                default_args[k] = all_args['shared'][k]
     return default_args
