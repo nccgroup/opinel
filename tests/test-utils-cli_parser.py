@@ -3,7 +3,6 @@
 import copy
 import shutil
 
-from opinel.utils.console import printError
 from opinel.utils.cli_parser import *
 
 class TestOpinelUtilsCliParserClass:
