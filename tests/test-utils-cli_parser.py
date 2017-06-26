@@ -8,10 +8,9 @@ from opinel.utils.cli_parser import *
 class TestOpinelUtilsCliParserClass:
 
     def setup(self):
-        self.recipes_arg_dir = os.path.join(os.path.expanduser('~/.aws/recipes'))
-        if not os.path.isdir(self.recipes_arg_dir):
-            os.makedirs(self.recipes_arg_dir)
-        shutil.copyfile('tests/data/default_args.json', os.path.join(self.recipes_arg_dir, 'default.json'))
+        if not os.path.isdir(opinel_arg_dir):
+            os.makedirs(opinel_arg_dir)
+        shutil.copyfile('tests/data/default_args.json', os.path.join(opinel_arg_dir, 'default.json'))
 
     def test_class(self):
         parser = OpinelArgumentParser()
@@ -27,11 +26,19 @@ class TestOpinelUtilsCliParserClass:
         parser.add_argument('mfa-serial')
         parser.add_argument('mfa-code')
         parser.add_argument('csv-credentials')
+        parser.add_argument('foo1', help_string='I need somebody', nargs='+', default=[])
+        parser.add_argument('bar1', help_string='I need somebody', action='store_true', default=False)
+        parser.add_argument('foo2', help_string='I need somebody', nargs='+', default=[])
+        parser.add_argument('bar2', help_string='I need somebody', action='store_true', default=False)
+
+        # Check exception case
         try:
-            parser.add_argument('opinelunittest')
+            parser.add_argument('opinelunittest') # Should throw an exception
+            assert False
         except:
             pass
 
+        # Invoke parse_args()
         parser.parser.add_argument('--with-coverage', dest='unittest', default=None, help='Unit test artefact')
         args = parser.parse_args()
         return
@@ -64,5 +71,9 @@ class TestOpinelUtilsCliParserClass:
         expected_shared_args['common_groups'] = [ 'SomethingDifferent' ]
         expected_shared_args.pop('force_common_group')
         assert default_args == expected_shared_args
-        shutil.rmtree(self.recipes_arg_dir)
+        tmp_opinel_arg_dir = '%s.tmp' % opinel_arg_dir
+        shutil.move(opinel_arg_dir, tmp_opinel_arg_dir)
         default_args = read_default_args('awsrecipes_sort_iam_users.py')
+        shutil.rmtree(opinel_arg_dir)
+        assert default_args == {}
+        shutil.move(tmp_opinel_arg_dir, opinel_arg_dir)

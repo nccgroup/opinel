@@ -5,16 +5,19 @@ import json
 import os
 import sys
 
+opinel_arg_dir = os.path.join(os.path.expanduser('~'), '.aws/opinel')
 
 class OpinelArgumentParser(object):
     """
     """
 
-    def __init__(self):
+    def __init__(self, tool_name = ''):
         self.parser = argparse.ArgumentParser()
+        self.default_args = read_default_args(tool_name)
 
+    def add_argument(self, argument_name, help_string = None, nargs = None, default = None, action = None):
 
-    def add_argument(self, argument_name, help_string = None, default_args = None):
+        # Built-in, common arguments
         if argument_name == 'debug':
             self.parser.add_argument('--debug',
                                 dest='debug',
@@ -99,37 +102,53 @@ class OpinelArgumentParser(object):
                                 default=[],
                                 nargs='+',
                                 help='Name of the IAM group.' if not help_string else help_string)
+
+        # Default
+        elif help_string != None and default != None and (nargs != None or action != None):
+            dest = argument_name.replace('-', '_')
+            if nargs:
+                self.parser.add_argument('--%s' % argument_name,
+                                         dest = dest,
+                                         default = self.default_args[dest] if dest in self.default_args else default,
+                                         nargs = nargs,
+                                         help = help_string)
+            elif action:
+                self.parser.add_argument('--%s' % argument_name,
+                                         dest = dest,
+                                         default = self.default_args[dest] if dest in self.default_args else default,
+                                         action = action,
+                                         help = help_string)
+
+        # Error
         else:
             raise Exception('Invalid parameter name %s' % argument_name)
 
-
+    
     def parse_args(self):
         args = self.parser.parse_args()
         return args
 
 
-def read_default_args(recipe_name):
+def read_default_args(tool_name):
     """
-    Read default argument values for a given recipe
+    Read default argument values for a given tool
 
-    :param recipe_name:                 Name of the script to read the default arguments for
-    :return:                            Dictionary of default arguments (shared + recipe-specific)
+    :param tool_name:                   Name of the script to read the default arguments for
+    :return:                            Dictionary of default arguments (shared + tool-specific)
     """
     profile_name = 'default'
     # h4ck to have an early read of the profile name
     for i, arg in enumerate(sys.argv):
         if arg == '--profile' and len(sys.argv) >= i + 1:
             profile_name = sys.argv[i + 1]
-    recipes_arg_dir = os.path.join(os.path.expanduser('~'), '.aws/recipes')
-    if not os.path.isdir(recipes_arg_dir):
-        os.makedirs(recipes_arg_dir)
-    recipes_arg_file = os.path.join(recipes_arg_dir, '%s.json' % profile_name)
+    if not os.path.isdir(opinel_arg_dir):
+        os.makedirs(opinel_arg_dir)
+    opinel_arg_file = os.path.join(opinel_arg_dir, '%s.json' % profile_name)
     default_args = {}
-    if os.path.isfile(recipes_arg_file):
-        print('Args from: %s' % recipes_arg_file)
-        with open(recipes_arg_file, 'rt') as f:
+    if os.path.isfile(opinel_arg_file):
+        with open(opinel_arg_file, 'rt') as f:
             all_args = json.load(f)
         for target in all_args:
-            if recipe_name.endswith(target) or target == 'shared':
+            if tool_name.endswith(target) or target == 'shared':
                 default_args.update(all_args[target])
     return default_args
