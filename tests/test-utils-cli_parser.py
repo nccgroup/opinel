@@ -115,12 +115,13 @@ class TestOpinelUtilsCliParserClass:
         default_args = read_default_args('awsrecipes_foobar.py')
         assert self.cmp(default_args, expected_shared_args) == 0
         default_args = read_default_args('awsrecipes_create_iam_user.py')
-        expected_shared_args['force_common_group'] = 'True'
-        assert self.cmp(default_args, expected_shared_args) == 0
+        tmp1 = copy.deepcopy(expected_shared_args)
+        tmp1['force_common_group'] = 'True'
+        assert self.cmp(default_args, tmp1) == 0
         default_args = read_default_args('awsrecipes_sort_iam_users.py')
-        expected_shared_args['common_groups'] = [ 'SomethingDifferent' ]
-        expected_shared_args.pop('force_common_group')
-        assert self.cmp(default_args, expected_shared_args) == 0
+        tmp1 = copy.deepcopy(expected_shared_args)
+        tmp1['common_groups'] = ['SomethingDifferent']
+        assert self.cmp(default_args, tmp1) == 0
         tmp_opinel_arg_dir = '%s.tmp' % opinel_arg_dir
         shutil.move(opinel_arg_dir, tmp_opinel_arg_dir)
         default_args = read_default_args('awsrecipes_sort_iam_users.py')
