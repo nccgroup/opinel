@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 
+from botocore.config import Config
+
 from opinel.utils.aws import *
 from opinel.utils.credentials import read_creds, read_creds_from_environment_variables
-
 
 class TestOpinelAWS:
 
@@ -30,13 +31,20 @@ class TestOpinelAWS:
         client = connect_service('iam', self.creds)
         client = connect_service('iam', self.creds, config={})
         client = connect_service('iam', self.creds, silent=True)
-        client = connect_service('ec2', self.creds, 'us-east-1')
+        client = connect_service('ec2', self.creds, region_name = 'us-east-1')
         try:
             client = connect_service('opinelunittest', creds)
             assert(False)
         except:
-            # Except an exception if invalid service name was provided
             pass
+        config = Config(region_name = 'us-east-1')
+        client = connect_service('ec2', self.creds, config = config)
+        try:
+            client = connect_service('ec2', self.creds, region_name = config)
+            assert(False)
+        except:
+            pass
+
 
 
     def test_get_aws_account_id(self):
