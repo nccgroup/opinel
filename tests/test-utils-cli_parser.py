@@ -67,19 +67,19 @@ class TestOpinelUtilsCliParserClass:
             ]
         }
         shared_args = read_default_args('shared')
-        assert cmp(shared_args, expected_shared_args) == 0
+        assert self.cmp(shared_args, expected_shared_args) == 0
         default_args = read_default_args('awsrecipes_foobar.py')
-        assert cmp(default_args, expected_shared_args) == 0
+        assert self.cmp(default_args, expected_shared_args) == 0
         default_args = read_default_args('awsrecipes_create_iam_user.py')
         expected_shared_args['force_common_group'] = 'True'
-        assert cmp(default_args, expected_shared_args) == 0
+        assert self.cmp(default_args, expected_shared_args) == 0
         default_args = read_default_args('awsrecipes_sort_iam_users.py')
         expected_shared_args['common_groups'] = [ 'SomethingDifferent' ]
         expected_shared_args.pop('force_common_group')
-        assert cmp(default_args, expected_shared_args) == 0
+        assert self.cmp(default_args, expected_shared_args) == 0
         tmp_opinel_arg_dir = '%s.tmp' % opinel_arg_dir
         shutil.move(opinel_arg_dir, tmp_opinel_arg_dir)
         default_args = read_default_args('awsrecipes_sort_iam_users.py')
         shutil.rmtree(opinel_arg_dir)
-        assert cmp(default_args, {}) == 0
+        assert self.cmp(default_args, {}) == 0
         shutil.move(tmp_opinel_arg_dir, opinel_arg_dir)
