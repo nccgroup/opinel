@@ -27,7 +27,7 @@ def build_region_list(service, chosen_regions = [], partition_name = 'aws'):
         return regions
 
 
-def connect_service(service, credentials, region_name = None, config = None, quiet = False):
+def connect_service(service, credentials, region_name = None, config = None, silent = False):
     """
     Instantiates an AWS API client
 
@@ -35,7 +35,7 @@ def connect_service(service, credentials, region_name = None, config = None, qui
     :param credentials:
     :param region_name:
     :param config:
-    :param quiet:
+    :param silent:
 
     :return:
     """
@@ -53,7 +53,7 @@ def connect_service(service, credentials, region_name = None, config = None, qui
         if config:
             client_params['config'] = config
         aws_session = boto3.session.Session(**session_params)
-        if not quiet:
+        if not silent:
             infoMessage = 'Connecting to AWS %s' % service
             if region_name:
                 infoMessage = infoMessage + ' in %s' % region_name
