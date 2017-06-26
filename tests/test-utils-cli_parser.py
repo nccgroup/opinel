@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import collections
 import os
 import shutil
 
@@ -11,6 +12,8 @@ class TestOpinelUtilsCliParserClass:
         """
         Implement cmp() for Python3 tests
         """
+        a = collections.OrderedDict(sorted(a.items()))
+        b = collections.OrderedDict(sorted(b.items()))
         return (a > b) - (a < b)
 
     def setup(self):
