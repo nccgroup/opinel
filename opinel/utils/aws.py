@@ -85,7 +85,7 @@ def get_name(src, dst, default_attribute):
 
 
 def get_caller_identity(credentials):
-    api_client = connect_service('sts', credentials)
+    api_client = connect_service('sts', credentials, silent = True)
     return api_client.get_caller_identity()
 
 

@@ -24,6 +24,26 @@ def add_user_to_group(iam_client, user, group, quiet = False):
     iam_client.add_user_to_group(GroupName = group, UserName = user)
 
 
+def create_groups(iam_client, groups):
+    """
+    Create a number of IAM group, silently handling exceptions when entity already exists
+                                        .
+    :param iam_client:                  AWS API client for IAM
+    :param groups:                      Name of IAM groups to be created.
+
+    :return:                            None
+    """
+    if type(groups) != list:
+        groups = [ groups ]
+    for group in groups:
+        try:
+            printInfo('Creating group %s...' % group)
+            iam_client.create_group(GroupName = group)
+        except  Exception as e:
+            if e.response['Error']['Code'] != 'EntityAlreadyExists':
+                printException(e)
+
+
 def create_user(iam_client, user, groups = [], with_password= False, with_mfa = False, with_access_key = False, require_password_reset = True):
     """
 
@@ -229,6 +249,33 @@ def get_access_keys(iam_client, user_name):
     return keys
 
 
+def init_group_category_regex(category_groups, category_regex_args):
+    """
+    Initialize and compile regular expression for category groups
+
+    :param category_regex_args:         List of string regex
+
+    :return:                            List of compiled regex
+    """
+    category_regex = []
+    authorized_empty_regex = 1
+    if len(category_regex_args) and len(category_groups) != len(category_regex_args):
+        printError('Error: you must provide as many regex as category groups.')
+        return None
+    for regex in category_regex_args:
+        if len(regex) < 1:
+            if authorized_empty_regex > 0:
+                category_regex.append(None)
+                authorized_empty_regex -= 1
+            else:
+                printError('Error: you cannot have more than one empty regex to automatically assign groups to users.')
+                return None
+        else:
+            category_regex.append(re.compile(regex))
+    return category_regex
+
+
+
 def show_access_keys(iam_client, user_name):
     """
 
@@ -240,24 +287,3 @@ def show_access_keys(iam_client, user_name):
     printInfo('User \'%s\' currently has %s access keys:' % (user_name, len(keys)))
     for key in keys:
         printInfo('\t%s (%s)' % (key['AccessKeyId'], key['Status']))
-
-
-def init_iam_group_category_regex(category_groups, arg_category_regex):
-    """
-    Initialize and compile regular expression for category groups
-
-    :param category_groups:
-    :param arg_category_regex:
-    :return:
-    """
-    if len(arg_category_regex) and len(category_groups) != len(arg_category_regex):
-        printError('Error: you must provide as many regex as category groups.')
-        return None
-    else:
-        category_regex = []
-        for regex in arg_category_regex:
-            if regex != '':
-                category_regex.append(re.compile(regex))
-            else:
-                category_regex.append(None)
-        return category_regex
