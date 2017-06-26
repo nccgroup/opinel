@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 
 import argparse
-
+import json
+import os
+import sys
 
 
 class OpinelArgumentParser(object):
@@ -104,3 +106,30 @@ class OpinelArgumentParser(object):
     def parse_args(self):
         args = self.parser.parse_args()
         return args
+
+
+def read_default_args(recipe_name):
+    """
+    Read default argument values for a given recipe
+
+    :param recipe_name:                 Name of the script to read the default arguments for
+    :return:                            Dictionary of default arguments (shared + recipe-specific)
+    """
+    profile_name = 'default'
+    # h4ck to have an early read of the profile name
+    for i, arg in enumerate(sys.argv):
+        if arg == '--profile' and len(sys.argv) >= i + 1:
+            profile_name = sys.argv[i + 1]
+    recipes_arg_dir = os.path.join(os.path.expanduser('~'), '.aws/recipes')
+    if not os.path.isdir(recipes_arg_dir):
+        os.makedirs(recipes_arg_dir)
+    recipes_arg_file = os.path.join(recipes_arg_dir, '%s.json' % profile_name)
+    default_args = {}
+    if os.path.isfile(recipes_arg_file):
+        print('Args from: %s' % recipes_arg_file)
+        with open(recipes_arg_file, 'rt') as f:
+            all_args = json.load(f)
+        for target in all_args:
+            if recipe_name.endswith(target) or target == 'shared':
+                default_args.update(all_args[target])
+    return default_args
