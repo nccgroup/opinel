@@ -1,0 +1,13 @@
+{
+    "awsrecipes_sort_iam_users.py": {
+        "common_groups": [ "SomethingDifferent" ]
+    },
+    "awsrecipes_create_iam_user.py": {
+        "force_common_group": "True"
+    },
+    "shared": {
+        "common_groups":   [ "AllUsers" ],
+        "category_groups": [ "AllHumanUsers", "AllHeadlessUsers", "AllMisconfiguredUsers" ],
+        "category_regex":  [ "", "Headless-.*", "MisconfiguredUser-.*" ]
+    }
+}
