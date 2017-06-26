@@ -30,7 +30,7 @@ class TestOpinelAWS:
     def test_connect_service(self):
         client = connect_service('iam', self.creds)
         client = connect_service('iam', self.creds, config={})
-        client = connect_service('iam', self.creds, silent=True)
+        client = connect_service('iam', self.creds, quiet=True)
         client = connect_service('ec2', self.creds, region_name = 'us-east-1')
         try:
             client = connect_service('opinelunittest', creds)
