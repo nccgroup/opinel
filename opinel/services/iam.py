@@ -33,6 +33,7 @@ def create_groups(iam_client, groups):
 
     :return:                            None
     """
+    errors = []
     if type(groups) != list:
         groups = [ groups ]
     for group in groups:
@@ -42,6 +43,8 @@ def create_groups(iam_client, groups):
         except  Exception as e:
             if e.response['Error']['Code'] != 'EntityAlreadyExists':
                 printException(e)
+                errors.append(group)
+    return errors
 
 
 def create_user(iam_client, user, groups = [], with_password= False, with_mfa = False, with_access_key = False, require_password_reset = True):
