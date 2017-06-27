@@ -64,10 +64,10 @@ class TestOpinelUtilsCliParserClass:
         parser.add_argument('bucket-name')
         parser.add_argument('group-name')
         parser.add_argument('user-name')
-        parser.add_argument('foo1', help_string='I need somebody', nargs='+', default=[])
-        parser.add_argument('bar1', help_string='I need somebody', action='store_true', default=False)
-        parser.add_argument('foo2', help_string='I need somebody', nargs='+', default=[])
-        parser.add_argument('bar2', help_string='I need somebody', action='store_true', default=False)
+        parser.add_argument('foo1', help='I need somebody', nargs='+', default=[])
+        parser.add_argument('bar1', help='I need somebody', action='store_true', default=False)
+        parser.add_argument('foo2', help='I need somebody', nargs='+', default=[])
+        parser.add_argument('bar2', help='I need somebody', action='store_true', default=False)
 
         # Check exception case
         try:
