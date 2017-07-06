@@ -48,7 +48,7 @@ def load_data(data_file, key_name = None, local_file = False):
     return data
 
 
-def read_ip_ranges(filename, local_file = True, conditions = [], ip_only = False):
+def read_ip_ranges(filename, local_file = True, ip_only = False, conditions = []):
     """
     Returns the list of IP prefixes from an ip-ranges file
 
@@ -59,10 +59,20 @@ def read_ip_ranges(filename, local_file = True, conditions = [], ip_only = False
     :return:
     """
     targets = []
-    data = load_data(filename, 'prefixes', local_file)
+    data = load_data(filename, local_file = local_file)
+    if 'source' in data:
+        # Filtered IP ranges
+        conditions = data['conditions']
+        local_file = data['local_file'] if 'local_file' in data else False
+        data = load_data(data['source'], local_file = local_file, key_name = 'prefixes')
+    else:
+        # Plain IP ranges
+        data = data['prefixes']
     for d in data:
         condition_passed = True
         for condition in conditions:
+            if type(condition) != list or len(condition) < 3:
+                continue
             condition_passed = pass_condition(d[condition[0]], condition[1], condition[2])
             if not condition_passed:
                 break

@@ -28,7 +28,7 @@ class TestOpinelFsClass:
         load_data(test, local_file=True)
         load_data(test, 'protocols', local_file=True)
         load_data('protocols.json', 'protocols')
-        load_data('ip-ranges.json', 'prefixes')
+        load_data('ip-ranges/aws.json', 'prefixes')
         load_data('tests/data/protocols.json', 'protocols', local_file=True)
         test = load_data('protocols.json', 'protocols')
         assert type(test) == dict
@@ -43,37 +43,56 @@ class TestOpinelFsClass:
 
 
     def test_read_ip_ranges(self):
-        read_ip_ranges('ip-ranges.json', local_file=False)
+        read_ip_ranges('ip-ranges/aws.json', local_file=False)
         read_ip_ranges('tests/data/ip-ranges-1.json', local_file=True)
         read_ip_ranges('tests/data/ip-ranges-1.json', local_file=True, ip_only=True)
         successful_read_ip_ranges_runs = True
         test_cases = [
-         {'filename': 'tests/data/ip-ranges-1.json',
-            'local_file': True,
-            'conditions': [],'ip_only': False,
-            'results': 'tests/results/read_ip_ranges/ip-ranges-1a.json'
+            {
+                'filename': 'tests/data/ip-ranges-1.json',
+                'local_file': True,
+                'conditions': [],'ip_only': False,
+                'results': 'tests/results/read_ip_ranges/ip-ranges-1a.json'
             },
-         {'filename': 'tests/data/ip-ranges-1.json',
-            'local_file': True,
-            'conditions': [],'ip_only': True,
-            'results': 'tests/results/read_ip_ranges/ip-ranges-1b.json'
+            {
+                'filename': 'tests/data/ip-ranges-1.json',
+                'local_file': True,
+                'conditions': [],'ip_only': True,
+                'results': 'tests/results/read_ip_ranges/ip-ranges-1b.json'
             },
-         {'filename': 'tests/data/ip-ranges-1.json',
-            'local_file': True,
-            'conditions': [
+            {
+                'filename': 'tests/data/ip-ranges-1.json',
+                'local_file': True,
+                'conditions': [
                          [
                           'field_a', 'equal', 'a1']],
-            'ip_only': True,
-            'results': 'tests/results/read_ip_ranges/ip-ranges-1c.json'
+                'ip_only': True,
+                'results': 'tests/results/read_ip_ranges/ip-ranges-1c.json'
             },
-         {'filename': 'ip-ranges.json',
-            'local_file': False,
-            'conditions': [
-                         [
-                          'ip_prefix', 'equal', '23.20.0.0/14']],
-            'ip_only': False,
-            'results': 'tests/results/read_ip_ranges/ip-ranges-a.json'
-            }]
+            {
+                'filename': 'ip-ranges/aws.json',
+                'local_file': False,
+                'conditions': [
+                    [ 'ip_prefix', 'equal', '23.20.0.0/14' ]
+                ],
+                'ip_only': False,
+                'results': 'tests/results/read_ip_ranges/ip-ranges-a.json'
+            },
+            {
+                "filename": 'tests/data/ip-ranges-3.json',
+                "local_file": True,
+                'results': None,
+                "ip_only": True
+                "results": "tests/results/read_ip_ranges/ip-ranges-3.json"
+            },
+            {
+                "filename": 'tests/data/ip-ranges-3.json',
+                "local_file": True,
+                'results': None,
+                "ip_only": True
+                "results": "tests/results/read_ip_ranges/ip-ranges-3.json"
+            }
+        ]
         for test_case in test_cases:
             results = test_case.pop('results')
             test_results = read_ip_ranges(**test_case)
