@@ -3,7 +3,6 @@
 import datetime
 
 from opinel.utils.fs import *
-from opinel.utils.console import configPrintException
 
 class TestOpinelFsClass:
     """
@@ -103,7 +102,6 @@ class TestOpinelFsClass:
         assert successful_read_ip_ranges_runs
 
     def test_save_blob_as_json(self):
-        configPrintException(True)
         date = datetime.datetime.now()
         save_blob_as_json('tmp1.json', {'foo': 'bar','date': date}, True, False)
         save_blob_as_json('tmp1.json', {'foo': 'bar'}, True, True)
