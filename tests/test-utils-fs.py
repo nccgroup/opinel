@@ -3,6 +3,7 @@
 import datetime
 
 from opinel.utils.fs import *
+from opinel.utils.console import configPrintException
 
 class TestOpinelFsClass:
     """
@@ -14,6 +15,9 @@ class TestOpinelFsClass:
         Implement cmp() for Python3 tests
         """
         return (a > b) - (a < b)
+
+    def setup(self):
+        configPrintException(True)
 
     def test_CustomJSONEncoder(self):
         date = datetime.datetime(2017, 6, 12)
