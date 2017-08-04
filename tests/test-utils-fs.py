@@ -82,14 +82,14 @@ class TestOpinelFsClass:
                 "filename": 'tests/data/ip-ranges-3.json',
                 "local_file": True,
                 'results': None,
-                "ip_only": True
+                "ip_only": True,
                 "results": "tests/results/read_ip_ranges/ip-ranges-3.json"
             },
             {
                 "filename": 'tests/data/ip-ranges-3.json',
                 "local_file": True,
                 'results': None,
-                "ip_only": True
+                "ip_only": True,
                 "results": "tests/results/read_ip_ranges/ip-ranges-3.json"
             }
         ]
