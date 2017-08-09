@@ -31,7 +31,9 @@ def check_requirements(script_path, requirements_file = None):
     opinel_min_version = opinel_max_version = boto3_min_version = boto3_max_version = None
     # Requirements file is either next to the script or in data/requirements
     if not requirements_file:
-        requirements_file = os.path.join(script_dir, 'data/requirements.txt') if os.path.isfile(os.path.join(script_dir, 'data/requirements.txt')) else 'requirements.txt'
+        requirements_file = os.path.join(script_dir, 'data/requirements.txt')
+        if not os.path.isfile(requirements_file):
+            requirements_file = os.path.join(script_dir, 'requirements.txt')
     with open(requirements_file, 'rt') as f:
         for requirement in f.readlines():
             opinel_requirements = re_opinel.match(requirement)
