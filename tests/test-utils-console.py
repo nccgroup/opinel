@@ -31,7 +31,7 @@ class TestOpinelUtilsConsoleClass:
             printException(e)
         try:
             raise Exception('opinelunittest')
-        except:
+        except Exception as e:
             printException(e, True)
 
 
