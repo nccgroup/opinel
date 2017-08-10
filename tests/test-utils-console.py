@@ -29,6 +29,10 @@ class TestOpinelUtilsConsoleClass:
             raise Exception('opinelunittest')
         except Exception as e:
             printException(e)
+        try:
+            raise Exception('opinelunittest')
+        except:
+            printException(e, True)
 
 
     def test_printInfo(msg, newLine=True):

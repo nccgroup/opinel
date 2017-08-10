@@ -46,11 +46,11 @@ def printError(msg, newLine = True):
     printGeneric(sys.stderr, msg, newLine)
 
 
-def printException(e):
+def printException(e, debug_only = False):
     global verbose_exceptions
     if verbose_exceptions:
         printError(str(traceback.format_exc()))
-    else:
+    elif not debug_only:
         printError(str(e))
 
 
