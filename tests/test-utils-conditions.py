@@ -151,6 +151,7 @@ class TestOpinelConditionClass:
 
         assert pass_condition(date3, 'newerThan', [90, 'days']) == True
         assert pass_condition(date4, 'newerThan', [90, 'days']) == False
+        assert pass_condition(date4, 'newerThan', ['90', 'days']) == False
 
         assert pass_condition('192.168.0.1', 'inSubnets', '192.168.0.0/24') == True
         assert pass_condition('192.168.0.1', 'inSubnets', ['192.168.0.0/24']) == True

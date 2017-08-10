@@ -16,7 +16,7 @@ def __prepare_age_test(a, b):
     if type(a) != list:
         printError('Error: olderThan requires a list such as [ N , \'days\' ] or [ M, \'hours\'].')
         raise Exception
-    number = a[0]
+    number = int(a[0])
     unit = a[1]
     if unit not in ['days', 'hours', 'minutes', 'seconds']:
         printError('Error: only days, hours, minutes, and seconds are supported.')
