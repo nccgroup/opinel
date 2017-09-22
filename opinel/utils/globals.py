@@ -93,3 +93,10 @@ def manage_dictionary(dictionary, key, init, callback = None):
         if callback:
             callback(dictionary[key])
     return dictionary
+
+
+def snake_to_camel(snake):
+    return "".join(val.title() for val in snake.split('_'))
+
+def snake_to_words(snake, capitalize = False):
+    return " ".join(val.title() if capitalize else val for val in snake.split('_'))
