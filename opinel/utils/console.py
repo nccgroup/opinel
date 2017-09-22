@@ -39,7 +39,7 @@ def configPrintException(enable):
 
 def printDebug(msg):
     if verbose_exceptions:
-        printGeneric(sys.stdout, msg)
+        printGeneric(sys.stderr, msg)
 
 
 def printError(msg, newLine = True):
@@ -56,9 +56,9 @@ def printException(e, debug_only = False):
 
 def printGeneric(out, msg, newLine = True):
     out.write(msg)
+    out.flush()
     if newLine == True:
         out.write('\n')
-    out.flush()
 
 
 def printInfo(msg, newLine = True ):
@@ -146,7 +146,7 @@ def prompt_4_overwrite(filename, force_write, input = None):
     return prompt_4_yes_no('File \'{}\' already exists. Do you want to overwrite it'.format(filename), input = input)
 
 
-def prompt_4_value(question, choices = None, default = None, display_choices = True, display_indices = False, authorize_list = False, is_question = False, no_confirm = False, required = True, regex = None, regex_format = '', max_laps = 5, input = None):
+def prompt_4_value(question, choices = None, default = None, display_choices = True, display_indices = False, authorize_list = False, is_question = False, no_confirm = False, required = True, regex = None, regex_format = '', max_laps = 5, input = None, return_index = False):
     """
     Prompt for a value
                                         .                    .
@@ -203,6 +203,7 @@ def prompt_4_value(question, choices = None, default = None, display_choices = T
             else:
                 choice_valid = True
                 if display_indices and int(choice) < len(choices):
+                    int_choice = choice
                     choice = choices[int(choice)]
                 else:
                     for c in user_choices:
@@ -225,7 +226,7 @@ def prompt_4_value(question, choices = None, default = None, display_choices = T
         if can_return:
             # Manually onfirm that the entered value is correct if needed
             if no_confirm or prompt_4_yes_no('You entered "' + choice + '". Is that correct', input=input):
-                return choice
+                return int(int_choice) if return_index else choice
 
 
 def prompt_4_yes_no(question, input = None):
