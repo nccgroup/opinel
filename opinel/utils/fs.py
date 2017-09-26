@@ -4,10 +4,9 @@ from __future__ import print_function
 import datetime
 import json
 import os
-import re
-import sys
+import yaml
 
-from opinel.utils.console import printException, prompt_4_overwrite
+from opinel.utils.console import printError, printException, prompt_4_overwrite
 from opinel.utils.conditions import pass_condition
 
 
@@ -23,7 +22,7 @@ class CustomJSONEncoder(json.JSONEncoder):
             return o.__dict__
 
 
-def load_data(data_file, key_name = None, local_file = False):
+def load_data(data_file, key_name = None, local_file = False, format = 'json'):
     """
     Load a JSON data file
 
@@ -39,10 +38,20 @@ def load_data(data_file, key_name = None, local_file = False):
             src_dir = os.getcwd()
             src_file = os.path.join(src_dir, data_file)
     else:
-        src_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../data')
+        src_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'data')
+        if not os.path.isdir(src_dir):
+            src_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../data')
         src_file = os.path.join(src_dir, data_file)
     with open(src_file) as f:
-        data = json.load(f)
+        if format == 'json':
+            data = json.load(f)
+        elif format == 'yaml':
+            data = yaml.load(f)
+        elif format not in ['json', 'yaml'] and not key_name:
+            data = f.read()
+        else:
+            printError('Error, argument \'key_name\' may not be used with data in %s format.' % format)
+            return None
     if key_name:
         data = data[key_name]
     return data
@@ -85,6 +94,20 @@ def read_ip_ranges(filename, local_file = True, ip_only = False, conditions = []
         return ips
     else:
         return targets
+
+
+def read_file(file_path, mode = 'rt'):
+    """
+    Read the contents of a file
+
+    :param file_path:                   Path of the file to be read
+
+    :return:                            Contents of the file
+    """
+    contents = ''
+    with open(file_path, mode) as f:
+        contents = f.read()
+    return contents
 
 
 def save_blob_as_json(filename, blob, force_write, debug):
