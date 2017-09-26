@@ -116,3 +116,6 @@ class TestOpinelFsClass:
             os.remove('ip-ranges-default.json')
         save_ip_ranges('default', {'a': 'b'}, False, False)
         save_ip_ranges('default', {'a': 'b'}, True, True)
+
+    def test_read_file(self):
+        pass

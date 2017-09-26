@@ -34,3 +34,9 @@ class TestOpinelUtils:
         assert (check_versions('1.0.0', '2.4.2', '2.0.0', 'opinelunittest', True) == False)
         assert (check_versions('1.0.0', '0.4.2', '2.0.0', 'opinelunittest') == False)
         assert (check_versions(None, None, None, None) == True)
+
+    def test_snake_to_camel(self):
+        pass
+
+    def test_snake_to_words(self):
+        pass
