@@ -36,7 +36,9 @@ class TestOpinelUtils:
         assert (check_versions(None, None, None, None) == True)
 
     def test_snake_to_camel(self):
-        pass
+        assert (snake_to_camel('one_two_three') == 'OneTwoThree')
 
     def test_snake_to_words(self):
-        pass
+        assert (snake_to_words('one_two_three') == 'one two three')
+        assert (snake_to_words('one_two_three', True) == 'One Two Three')
+

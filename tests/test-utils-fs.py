@@ -3,7 +3,7 @@
 import datetime
 
 from opinel.utils.fs import *
-from opinel.utils.console import configPrintException
+from opinel.utils.console import configPrintException, printError
 
 class TestOpinelFsClass:
     """
@@ -39,6 +39,13 @@ class TestOpinelFsClass:
         test = load_data('tests/data/protocols.json', 'protocols', True)
         assert type(test) == dict
         assert test['-2'] == 'TEST'
+        test = load_data('tests/data/protocols.yaml', 'protocols', True, format = 'yaml')
+        assert type(test) == dict
+        assert test['-2'] == 'TEST'
+        test = load_data('tests/data/protocols.txt', local_file = True, format = 'txt')
+        assert (test.rstrip() == 'some text here')
+        test = load_data('tests/data/protocols.json', 'protocols', True, format = 'unknown')
+        assert test == None
 
 
     def test_read_default_args(self):
@@ -118,4 +125,5 @@ class TestOpinelFsClass:
         save_ip_ranges('default', {'a': 'b'}, True, True)
 
     def test_read_file(self):
-        pass
+        test = read_file('tests/data/protocols.txt')
+        assert (test.rstrip() == 'some text here')
