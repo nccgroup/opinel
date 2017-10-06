@@ -33,18 +33,20 @@ def create_groups(iam_client, groups):
 
     :return:                            None
     """
-    errors = []
+    groups_data = []
     if type(groups) != list:
         groups = [ groups ]
     for group in groups:
+        errors = []
         try:
             printInfo('Creating group %s...' % group)
             iam_client.create_group(GroupName = group)
         except  Exception as e:
             if e.response['Error']['Code'] != 'EntityAlreadyExists':
                 printException(e)
-                errors.append(group)
-    return errors
+                errors.append('iam:creategroup')
+        groups_data.append({'groupname': group, 'errors': errors})
+    return groups_data
 
 
 def create_user(iam_client, user, groups = [], with_password= False, with_mfa = False, with_access_key = False, require_password_reset = True):
