@@ -42,13 +42,13 @@ class AWSProfile(object):
 class AWSProfiles(object):
 
     @staticmethod
-    def list(filters = []):
+    def list(names = []):
         """
         @brief
 
         :return:                        List of all profile names found in .aws/config and .aws/credentials
         """
-        return [p.name for p in AWSProfiles.get(filters)]
+        return [p.name for p in AWSProfiles.get(names)]
 
 
     @staticmethod

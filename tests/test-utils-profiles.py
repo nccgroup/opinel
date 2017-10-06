@@ -27,10 +27,10 @@ class TestOpinelUtilsAWSProfiles(object):
     def test_list(self):
         profiles = AWSProfiles.list()
         assert(set(['l01cd3v-1', 'l01cd3v-2', 'l01cd3v-role1', 'l01cd3v-role2', 'l01cd3v-3', 'l01cd3v-4']) == set(profiles))
-        profiles = AWSProfiles.list(filters = 'l01cd3v-role.*')
+        profiles = AWSProfiles.list(names = 'l01cd3v-role.*')
         printDebug(str(profiles))
         assert(set(['l01cd3v-role1', 'l01cd3v-role2']) == set(profiles))
-        profiles = AWSProfiles.list(filters = '.*1')
+        profiles = AWSProfiles.list(names = '.*1')
         assert(set(['l01cd3v-1', 'l01cd3v-role1']) == set(profiles))
 
 
