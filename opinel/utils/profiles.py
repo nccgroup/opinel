@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import fileinput
 import os
 import re
 
@@ -18,6 +19,7 @@ class AWSProfile(object):
         self.filename = filename
         self.raw_profile = raw_profile
         self.name = name
+        self.attributes = {}
         if self.raw_profile:
             self.parse_raw_profile()
 
@@ -28,6 +30,10 @@ class AWSProfile(object):
         return self.credentials
 
 
+    def set_attribute(self, attribute, value):
+        self.attributes[attribute] = value
+
+
     def parse_raw_profile(self):
         for line in self.raw_profile.split('\n')[1:]:
             line = line.strip()
@@ -35,7 +41,42 @@ class AWSProfile(object):
                 values = line.split('=')
                 attribute = values[0].strip()
                 value = ''.join(values[1:]).strip()
-                setattr(self, attribute, value)
+                self.attributes[attribute] = value
+
+
+    def write(self):
+        tmp = AWSProfiles.get(self.name, quiet = True)
+        if not self.raw_profile:
+            self.raw_profile = tmp[0].raw_profile if len(tmp) else None
+        if not self.filename:
+            self.filename = tmp[0].filename if len(tmp) else self.filename
+        if not self.raw_profile:
+            if 'role_arn' in self.attributes and 'source_profile' in self.attributes:
+                self.filename = aws_config_file
+                new_raw_profile = '\n[profile %s]' % self.name
+            else:
+                self.filename = aws_credentials_file
+                new_raw_profile = '\n[%s]' % self.name
+            for attribute in self.attributes:
+                new_raw_profile += '\n%s=%s' % (attribute, self.attributes[attribute])
+            with open(self.filename, 'a') as f:
+                f.write(new_raw_profile)
+        else:
+            new_raw_profile = ''
+            for line in self.raw_profile.splitlines():
+                line_updated = False
+                for attribute in self.attributes:
+                    if line.startswith(attribute):
+                        new_raw_profile += '%s=%s\n' % (attribute, self.attributes[attribute])
+                        line_updated = True
+                        break
+                if not line_updated:
+                    new_raw_profile += '%s\n' % line
+            with open(self.filename, 'rt') as f:
+                contents = f.read()
+            contents = contents.replace(self.raw_profile, new_raw_profile)
+            with open(self.filename, 'wt') as f:
+                f.write(contents)
 
 
 
@@ -52,21 +93,22 @@ class AWSProfiles(object):
 
 
     @staticmethod
-    def get(names = []):
+    def get(names = [], quiet = False):
         """
         """
         profiles = []
-        profiles += AWSProfiles.find_profiles_in_file(aws_credentials_file, names)
-        profiles += AWSProfiles.find_profiles_in_file(aws_config_file, names)
+        profiles += AWSProfiles.find_profiles_in_file(aws_credentials_file, names, quiet)
+        profiles += AWSProfiles.find_profiles_in_file(aws_config_file, names, quiet)
         return profiles
 
 
     @staticmethod
-    def find_profiles_in_file(filename, names = []):
+    def find_profiles_in_file(filename, names = [], quiet = True):
         profiles = []
         if type(names) != list:
             names = [ names ]
-        printDebug('Searching for profiles matching %s in %s ... ' % (str(names), filename))
+        if not quiet:
+            printDebug('Searching for profiles matching %s in %s ... ' % (str(names), filename))
         name_filters = []
         for name in names:
             name_filters.append(re.compile('^%s$' % name))

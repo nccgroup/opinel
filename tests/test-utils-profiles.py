@@ -36,10 +36,10 @@ class TestOpinelUtilsAWSProfiles(object):
 
     def test_get(self):
         profile = AWSProfiles.get('l01cd3v-role1')[0]
-        assert(hasattr(profile, 'role_arn'))
-        assert(hasattr(profile, 'source_profile'))
-        assert(getattr(profile, 'role_arn') == 'arn:aws:iam::123456789012:role/Role1')
-        assert(getattr(profile, 'source_profile') == 'l01cd3v-1')
+        assert('role_arn' in profile.attributes)
+        assert('source_profile' in profile.attributes)
+        assert(profile.attributes['role_arn'] == 'arn:aws:iam::123456789012:role/Role1')
+        assert(profile.attributes['source_profile'] == 'l01cd3v-1')
 
 
     def test_get_credentials(self):
@@ -49,3 +49,19 @@ class TestOpinelUtilsAWSProfiles(object):
         assert(credentials['SecretAccessKey'] == 'deadbeefdeadbeefdeadbeefdeadbeef11111111')
         assert(credentials['AccessKeyId'] == 'AKIAXXXXXXXXXXXXXXX1')
 
+    def test_write(self):
+        profile = AWSProfile(name = 'l01cd3v-role3')
+        profile.set_attribute('role_arn', 'arn:aws:iam::123456789012:role/Role3')
+        profile.set_attribute('source_profile', 'l01cd3v-3')
+        profile.write()
+        profile = AWSProfile(name = 'l01cd3v-role4')
+        profile.set_attribute('role_arn', 'arn:aws:iam::123456789012:role/Role4')
+        profile.set_attribute('source_profile', 'l01cd3v-4')
+        profile.write()
+        profile = AWSProfile(name = 'l01cd3v-5')
+        profile.set_attribute('aws_access_key_id', 'AKIAXXXXXXXXXXXXXXX5')
+        profile.set_attribute('aws_secret_access_key', 'deadbeefdeadbeefdeadbeefdeadbeef55555555')
+        profile.write()
+        profile = AWSProfile(name = 'l01cd3v-2')
+        profile.set_attribute('aws_mfa_serial', 'arn:aws:iam::123456789222:mfa/l01cd3v-2')
+        profile.write()

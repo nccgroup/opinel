@@ -57,9 +57,9 @@ aws_config_file = os.path.join(aws_config_dir, 'config')
 #
 # Assume role and save credentials
 #
-def assume_role(role_name, credentials, role_arn, role_session_name):
+def assume_role(role_name, credentials, role_arn, role_session_name, silent = False):
     # Connect to STS
-    sts_client = connect_service('sts', credentials, silent = False)
+    sts_client = connect_service('sts', credentials, silent = silent)
     # Set required arguments for assume role call
     sts_args = {
       'RoleArn': role_arn,
