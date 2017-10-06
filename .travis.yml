@@ -17,6 +17,7 @@ script:
     - nosetests --with-coverage tests/test-utils-console.py
     - nosetests --with-coverage tests/test-utils-aws.py
     - nosetests --with-coverage tests/test-utils-fs.py
+    - nosetests --with-coverage tests/test-utils-profiles.py
     - nosetests --with-coverage tests/test-utils-threads.py
     - nosetests --with-coverage tests/test-utils-cli_parser.py
     - nosetests --with-coverage tests/test-utils-credentials.py
