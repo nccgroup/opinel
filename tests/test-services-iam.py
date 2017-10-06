@@ -25,7 +25,7 @@ class TestOpinelServicesIAM:
 
 
     def make_travisname(self, testname):
-        return '%s-%s-%s' % (testname, binascii.b2a_hex(os.urandom(4)), self.python)
+        return '%s-%s-%s' % (testname, binascii.b2a_hex(os.urandom(4)).decode('utf-8'), self.python)
 
 
     def assert_group_create(self, groups_data, error_count):
