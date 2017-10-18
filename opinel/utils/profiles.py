@@ -4,6 +4,7 @@ import fileinput
 import os
 import re
 
+from opinel.utils.aws import get_aws_account_id
 from opinel.utils.console import printDebug
 from opinel.utils.credentials import read_creds
 
@@ -15,10 +16,11 @@ re_profile_name = re.compile(r'(\[(profile\s+)?(.*?)\])')
 
 class AWSProfile(object):
 
-    def __init__(self, filename = None, raw_profile = None, name = None, credentials = None):
+    def __init__(self, filename = None, raw_profile = None, name = None, credentials = None, account_id = None):
         self.filename = filename
         self.raw_profile = raw_profile
         self.name = name
+        self.account_id = account_id
         self.attributes = {}
         if self.raw_profile:
             self.parse_raw_profile()
@@ -27,6 +29,7 @@ class AWSProfile(object):
     def get_credentials(self):
         # For now, use the existing code...
         self.credentials = read_creds(self.name)
+        self.account_id = get_aws_account_id(self.credentials)
         return self.credentials
 
 
@@ -112,23 +115,24 @@ class AWSProfiles(object):
         name_filters = []
         for name in names:
             name_filters.append(re.compile('^%s$' % name))
-        with open(filename, 'rt') as f:
-            aws_credentials = f.read()
-            existing_profiles = re_profile_name.findall(aws_credentials)
-            profile_count = len(existing_profiles) - 1
-            for i, profile in enumerate(existing_profiles):
-                matching_profile = False
-                raw_profile = None
-                for name_filter in name_filters:
-                    if name_filter.match(profile[2]):
-                        matching_profile = True
-                        i1 = aws_credentials.index(profile[0])
-                        if i < profile_count:
-                            i2 = aws_credentials.index(existing_profiles[i+1][0])
-                            raw_profile = aws_credentials[i1:i2]
-                        else:
-                            raw_profile = aws_credentials[i1:]
-                if len(name_filters) == 0 or matching_profile:
-                    profiles.append(AWSProfile(filename = filename, raw_profile = raw_profile, name = profile[2]))
+        if os.path.isfile(filename):
+            with open(filename, 'rt') as f:
+                aws_credentials = f.read()
+                existing_profiles = re_profile_name.findall(aws_credentials)
+                profile_count = len(existing_profiles) - 1
+                for i, profile in enumerate(existing_profiles):
+                    matching_profile = False
+                    raw_profile = None
+                    for name_filter in name_filters:
+                        if name_filter.match(profile[2]):
+                            matching_profile = True
+                            i1 = aws_credentials.index(profile[0])
+                            if i < profile_count:
+                                i2 = aws_credentials.index(existing_profiles[i+1][0])
+                                raw_profile = aws_credentials[i1:i2]
+                            else:
+                                raw_profile = aws_credentials[i1:]
+                    if len(name_filters) == 0 or matching_profile:
+                        profiles.append(AWSProfile(filename = filename, raw_profile = raw_profile, name = profile[2]))
         return profiles
 
