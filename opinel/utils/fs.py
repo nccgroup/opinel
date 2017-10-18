@@ -144,13 +144,18 @@ def save_ip_ranges(profile_name, prefixes, force_write, debug, output_format = '
     filename = 'ip-ranges-%s.json' % profile_name
     ip_ranges = {}
     ip_ranges['createDate'] = datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
-    ip_ranges['prefixes'] = prefixes
+    # Unique prefixes
+    unique_prefixes = {}
+    for prefix in prefixes:
+        unique_prefixes[prefix['ip_prefix']] = prefix
+    unique_prefixes = unique_prefixes.values()
+    ip_ranges['prefixes'] = unique_prefixes
     if output_format == 'json':
         save_blob_as_json(filename, ip_ranges, force_write, debug)
     else:
         # Write as CSV
         output = 'account_id, region, ip, instance_id, instance_name\n'
-        for prefix in prefixes:
+        for prefix in unique_prefixes:
             output += '%s, %s, %s, %s, %s\n' % (prefix['account_id'], prefix['region'], prefix['ip_prefix'], prefix['instance_id'], prefix['name'])
         with open('ip-ranges-%s.csv' % profile_name, 'wt') as f:
             f.write(output)
