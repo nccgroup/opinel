@@ -99,6 +99,11 @@ def get_aws_account_id(credentials):
     return caller_identity['Arn'].split(':')[4]
 
 
+def get_partition_name(credentials):
+    caller_identity = get_caller_identity(credentials)
+    return caller_identity['Arn'].split(':')[1]
+
+
 def handle_truncated_response(callback, params, entities):
     """
     Handle truncated responses
