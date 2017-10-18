@@ -121,8 +121,8 @@ class TestOpinelFsClass:
     def test_save_ip_ranges(self):
         if os.path.isfile('ip-ranges-default.json'):
             os.remove('ip-ranges-default.json')
-        save_ip_ranges('default', {'a': 'b'}, False, False)
-        save_ip_ranges('default', {'a': 'b'}, True, True)
+        save_ip_ranges('default', ['1.2.3.4'], False, False)
+        save_ip_ranges('default', [{'ip_prefix': '5.6.7.8'}], True, True)
 
     def test_read_file(self):
         test = read_file('tests/data/protocols.txt')

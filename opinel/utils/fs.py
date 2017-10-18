@@ -147,7 +147,10 @@ def save_ip_ranges(profile_name, prefixes, force_write, debug, output_format = '
     # Unique prefixes
     unique_prefixes = {}
     for prefix in prefixes:
-        unique_prefixes[prefix['ip_prefix']] = prefix
+        if type(prefix) == dict:
+            unique_prefixes[prefix['ip_prefix']] = prefix
+        else:
+            unique_prefixes[prefix] = {'ip_prefix': prefix}
     unique_prefixes = unique_prefixes.values()
     ip_ranges['prefixes'] = unique_prefixes
     if output_format == 'json':
