@@ -24,6 +24,7 @@ script:
     - nosetests --with-coverage tests/test-utils-conditions.py
     - nosetests --with-coverage tests/test-services-cloudtrail.py
     - nosetests --with-coverage tests/test-services-iam.py
+    - nosetests --with-coverage tests/test-services-organizations.py
     - nosetests --with-coverage tests/test-services-s3.py
 
 after_success:
