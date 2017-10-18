@@ -29,7 +29,10 @@ class AWSProfile(object):
     def get_credentials(self):
         # For now, use the existing code...
         self.credentials = read_creds(self.name)
-        self.account_id = get_aws_account_id(self.credentials)
+        try:
+            self.account_id = get_aws_account_id(self.credentials)
+        except:
+            pass
         return self.credentials
 
 
