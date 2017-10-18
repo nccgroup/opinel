@@ -76,6 +76,9 @@ class TestOpinelAWS:
         assert (name == 'IdValue')
 
 
+    def test_get_partition_name(self):
+        pass
+
     def test_get_username(self):
         username = get_username(self.creds)
         assert (username == 'CI-local' or username == 'CI-travis-opinel')
