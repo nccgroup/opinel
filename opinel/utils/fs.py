@@ -151,7 +151,7 @@ def save_ip_ranges(profile_name, prefixes, force_write, debug, output_format = '
             unique_prefixes[prefix['ip_prefix']] = prefix
         else:
             unique_prefixes[prefix] = {'ip_prefix': prefix}
-    unique_prefixes = unique_prefixes.values()
+    unique_prefixes = list(unique_prefixes.values())
     ip_ranges['prefixes'] = unique_prefixes
     if output_format == 'json':
         save_blob_as_json(filename, ip_ranges, force_write, debug)
