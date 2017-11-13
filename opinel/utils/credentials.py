@@ -426,6 +426,9 @@ def read_creds(profile_name, csv_file = None, mfa_serial_arg = None, mfa_code = 
                 credentials = read_creds(source_profile)
                 if role_mfa_serial:
                     credentials['SerialNumber'] = role_mfa_serial
+                    # Auto prompt for a code...
+                    if not mfa_code:
+                        credentials['TokenCode'] = prompt_4_mfa_code()
                 credentials = assume_role(profile_name, credentials, role_arn, role_session_name)
         # Read from ~/.aws/credentials
         else:
