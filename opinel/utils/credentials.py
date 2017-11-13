@@ -37,7 +37,7 @@ re_cn_region = re.compile(r'^cn-(.*?)')
 re_port_range = re.compile(r'(\d+)\-(\d+)')
 re_single_port = re.compile(r'(\d+)')
 
-mfa_serial = r'aws_mfa_serial'
+mfa_serial = r'(aws_mfa_serial|mfa_serial)'
 mfa_serial_format = r'arn:aws:iam::\d+:mfa/[a-zA-Z0-9\+=,.@_-]+'
 re_mfa_serial = re.compile(mfa_serial)
 re_mfa_serial_format = re.compile(mfa_serial_format)
@@ -258,6 +258,7 @@ def read_creds_from_environment_variables():
 def read_profile_from_aws_config_file(profile_name, config_file = aws_config_file):
     role_arn = None
     source_profile = None
+    mfa_serial = None
     profile_found = False
     try:
         with open(config_file, 'rt') as config:
@@ -274,11 +275,13 @@ def read_profile_from_aws_config_file(profile_name, config_file = aws_config_fil
                         role_arn = line.split('=')[1].strip()
                     elif re_source_profile.match(line):
                         source_profile = line.split('=')[1].strip()
+                    elif re_mfa_serial.match(line):
+                        mfa_serial = line.split('=')[1].strip()
     except Exception as e:
         # Silent if error is due to no .aws/config file
         if not hasattr(e, 'errno') or e.errno != 2:
             printException(e)
-    return role_arn, source_profile
+    return role_arn, source_profile, mfa_serial
 
 
 #
@@ -404,7 +407,7 @@ def read_creds(profile_name, csv_file = None, mfa_serial_arg = None, mfa_code = 
         credentials = read_creds_from_ec2_instance_metadata()
     if not credentials['AccessKeyId'] and not csv_file:
         # Lookup if a role is defined in ~/.aws/config
-        role_arn, source_profile = read_profile_from_aws_config_file(profile_name)
+        role_arn, source_profile, role_mfa_serial = read_profile_from_aws_config_file(profile_name)
         if role_arn and source_profile:
             # Lookup cached credentials
             try:
@@ -421,6 +424,8 @@ def read_creds(profile_name, csv_file = None, mfa_serial_arg = None, mfa_code = 
                 pass
             if not expiration or expiration < current or credentials['AccessKeyId'] == None:
                 credentials = read_creds(source_profile)
+                if role_mfa_serial:
+                    credentials['SerialNumber'] = role_mfa_serial
                 credentials = assume_role(profile_name, credentials, role_arn, role_session_name)
         # Read from ~/.aws/credentials
         else:

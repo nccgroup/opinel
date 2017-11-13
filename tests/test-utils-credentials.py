@@ -70,13 +70,12 @@ class TestOpinelCredentialsClass:
     def test_read_creds_from_aws_credentials_file(self):
         test_cases = [{'profile_name': 'l01cd3v-1','credentials_file': 'tests/data/credentials'}, {'profile_name': 'l01cd3v-2','credentials_file': 'tests/data/credentials'}, {'profile_name': 'l01cd3v-3','credentials_file': 'tests/data/credentials'}, {'profile_name': 'l01cd3v-4','credentials_file': 'tests/data/credentials'}]
         results = [
-         ('AKIAXXXXXXXXXXXXXXX1', 'deadbeefdeadbeefdeadbeefdeadbeef11111111', 'arn:aws:iam::123456789111:mfa/l01cd3v',
- None),
-         ('AKIAXXXXXXXXXXXXXXX2', 'deadbeefdeadbeefdeadbeefdeadbeef22222222', 'arn:aws:iam::123456789222:mfa/l01cd3v',
- None),
+         ('AKIAXXXXXXXXXXXXXXX1', 'deadbeefdeadbeefdeadbeefdeadbeef11111111', 'arn:aws:iam::123456789111:mfa/l01cd3v', None),
+         ('AKIAXXXXXXXXXXXXXXX2', 'deadbeefdeadbeefdeadbeefdeadbeef22222222', None, None),
          ('ASIAXXXXXXXXXXXXXXX3', 'deadbeefdeadbeefdeadbeefdeadbeef33333333', None, 'deadbeef333//////////ZGVhZGJlZWZkZWFkYmVlZg==ZGVhZGJlZWZkZWFkYmVlZg==ZGVhZGJlZWZkZWFkYmVlZg==ZGVhZGJlZWZkZWFkYmVlZg==ZGVhZGJlZWZkZWFkYmVlZg==ZGVhZGJlZWZkZWFkYmVlZg==/ZGVhZGJlZWZkZWFkYmVlZg==+ZGVhZGJlZWZkZWFkYmVlZg==ZGVhZGJlZWZkZWFkYmVlZg==ZGVhZGJlZWZkZWFkYmVlZg==/ZGVhZGJlZWZkZWFkYmVlZg==ZGVhZGJlZWZkZWFkYmVlZg=='),
          ('ASIAXXXXXXXXXXXXXXX4', 'deadbeefdeadbeefdeadbeefdeadbeef44444444', None, 'deadbeef444//////////ZGVhZGJlZWZkZWFkYmVlZg==ZGVhZGJlZWZkZWFkYmVlZg==ZGVhZGJlZWZkZWFkYmVlZg==ZGVhZGJlZWZkZWFkYmVlZg==ZGVhZGJlZWZkZWFkYmVlZg==ZGVhZGJlZWZkZWFkYmVlZg==/ZGVhZGJlZWZkZWFkYmVlZg==+ZGVhZGJlZWZkZWFkYmVlZg==ZGVhZGJlZWZkZWFkYmVlZg==ZGVhZGJlZWZkZWFkYmVlZg==/ZGVhZGJlZWZkZWFkYmVlZg==ZGVhZGJlZWZkZWFkYmVlZg==')]
         for test_case, result in zip(test_cases, results):
+            credentials = {}
             credentials = read_creds_from_aws_credentials_file(**test_case)
             assert credentials['AccessKeyId'] == result[0]
             assert credentials['SecretAccessKey'] == result[1]
@@ -119,12 +118,20 @@ class TestOpinelCredentialsClass:
         assert creds['AccessKeyId'] == 'environment-AKIAJJ5TE81PVO72WPTQ'
         assert creds['SecretAccessKey'] == 'environment-67YkvxJ8Qx0EI97NvlIyM9kVz/uKddd0z0uGj123'
         assert creds['SessionToken'] == 'environment-session/////token'
-        return
 
     def test_read_profile_from_aws_config_file(self):
-        role_arn, source_profile = read_profile_from_aws_config_file('l01cd3v-role2', config_file='tests/data/config')
+        role_arn, source_profile, mfa_serial = read_profile_from_aws_config_file('l01cd3v-role1', config_file='tests/data/config')
+        assert role_arn == 'arn:aws:iam::123456789012:role/Role1'
+        assert source_profile == 'l01cd3v-1'
+        assert mfa_serial == None
+        role_arn, source_profile, mfa_serial = read_profile_from_aws_config_file('l01cd3v-role2', config_file='tests/data/config')
         assert role_arn == 'arn:aws:iam::123456789012:role/Role2'
         assert source_profile == 'l01cd3v-2'
+        assert mfa_serial == 'arn:aws:iam::123456789222:mfa/l01cd3v'
+        role_arn, source_profile, mfa_serial = read_profile_from_aws_config_file('l01cd3v-role3', config_file='tests/data/config')
+        assert role_arn == 'arn:aws:iam::123456789012:role/Role3'
+        assert source_profile == 'l01cd3v-2'
+        assert mfa_serial == 'arn:aws:iam::123456789333:mfa/l01cd3v'
 
     def test_get_profiles_from_aws_credentials_file(self):
         profiles1 = get_profiles_from_aws_credentials_file(credentials_files=['tests/data/credentials'])

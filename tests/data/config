@@ -5,3 +5,9 @@ source_profile = l01cd3v-1
 [profile l01cd3v-role2]
 role_arn = arn:aws:iam::123456789012:role/Role2
 source_profile = l01cd3v-2
+aws_mfa_serial = arn:aws:iam::123456789222:mfa/l01cd3v
+
+[profile l01cd3v-role3]
+role_arn = arn:aws:iam::123456789012:role/Role3
+source_profile = l01cd3v-2
+mfa_serial = arn:aws:iam::123456789333:mfa/l01cd3v
