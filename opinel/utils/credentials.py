@@ -438,7 +438,7 @@ def read_creds(profile_name, csv_file = None, mfa_serial_arg = None, mfa_code = 
                     sts_credentials = credentials
             else:
                 first_sts_session = True
-            if force_init:
+            if force_init or (mfa_serial_arg and mfa_code):
                 credentials = read_creds_from_aws_credentials_file(profile_name if first_sts_session else '%s-nomfa' % profile_name)
                 if not credentials['AccessKeyId']:
                     printInfo('Warning: Unable to determine STS token expiration; later API calls may fail.')
