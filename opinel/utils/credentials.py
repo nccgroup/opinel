@@ -189,7 +189,7 @@ def read_creds_from_aws_credentials_file(profile_name, credentials_file = aws_cr
                         credentials['SecretAccessKey'] = line.split("=")[1].strip()
                     elif re_mfa_serial.match(line):
                         credentials['SerialNumber'] = (line.split('=')[1]).strip()
-                    elif re_session_token.match(line):
+                    elif re_session_token.match(line) or re_security_token.match(line):
                         credentials['SessionToken'] = ('='.join(x for x in line.split('=')[1:])).strip()
                     elif re_expiration.match(line):
                         credentials['Expiration'] = ('='.join(x for x in line.split('=')[1:])).strip()
