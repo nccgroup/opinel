@@ -316,19 +316,6 @@ def write_creds_to_aws_credentials_file(profile_name, credentials, credentials_f
                 profile_found = True
                 profile_ever_found = True
             else:
-                if profile_found:
-                    if 'SessionToken' in credentials and credentials['SessionToken'] and not session_token_written:
-                        print('aws_session_token = %s' % credentials['SessionToken'])
-                        session_token_written = True
-                    if 'SessionToken' in credentials and credentials['SessionToken'] and not security_token_written:
-                        print('aws_security_token = %s' % credentials['SessionToken'])
-                        security_token_written = True
-                    if 'SerialNumber' in credentials and credentials['SerialNumber'] and not mfa_serial_written:
-                        print('aws_mfa_serial = %s' % credentials['SerialNumber'])
-                        mfa_serial_written = True
-                    if 'Expiration' in credentials and credentials['Expiration'] and not expiration_written:
-                        print('expiration = %s' % credentials['Expiration'])
-                        expiration_written = True
                 profile_found = False
             print(line.rstrip())
         elif profile_found:
