@@ -1,8 +1,12 @@
 # -*- coding: utf-8 -*-
 
+from opinel.utils.console import configPrintException
 from opinel.utils.threads import *
 
 class TestOpinelUtilsThreads:
+
+    def setup(self):
+        configPrintException(true)
 
     def callback(self, q, params):
         while True:
