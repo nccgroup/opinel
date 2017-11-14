@@ -6,7 +6,7 @@ from opinel.utils.threads import *
 class TestOpinelUtilsThreads:
 
     def setup(self):
-        configPrintException(true)
+        configPrintException(True)
 
     def callback(self, q, params):
         while True:
