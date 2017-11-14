@@ -356,7 +356,7 @@ def write_creds_to_aws_credentials_file(profile_name, credentials, credentials_f
     # Complete the profile if needed
     if profile_found:
         with open(credentials_file, 'a') as f:
-            complete_profile(f, credentials['SessionToken'], session_token_written, credentials['SerialNumber'], mfa_serial_written)
+            complete_profile(f, credentials, session_token_written, mfa_serial_written)
 
     # Add new profile if not found
     if not profile_ever_found:
@@ -364,12 +364,14 @@ def write_creds_to_aws_credentials_file(profile_name, credentials, credentials_f
             f.write('[%s]\n' % profile_name)
             f.write('aws_access_key_id = %s\n' % credentials['AccessKeyId'])
             f.write('aws_secret_access_key = %s\n' % credentials['SecretAccessKey'])
-            complete_profile(f, credentials['SessionToken'], session_token_written, credentials['SerialNumber'], mfa_serial_written)
+            complete_profile(f, credentials, session_token_written, mfa_serial_written)
 
 #
 # Append session token and mfa serial if needed
 #
-def complete_profile(f, session_token, session_token_written, mfa_serial, mfa_serial_written):
+def complete_profile(f, credentials, session_token_written, mfa_serial_written):
+    session_token = credentials['SessionToken'] if 'SessionToken' in credentials else None
+    mfa_serial = credentials['SerialNumber'] if 'SerialNumber' in credentials else None
     if session_token and not session_token_written:
         f.write('aws_session_token = %s\n' % session_token)
     if mfa_serial and not mfa_serial_written:
