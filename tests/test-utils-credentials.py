@@ -85,10 +85,10 @@ class TestOpinelCredentialsClass:
             assert credentials['SecretAccessKey'] == result[1]
             assert credentials['SerialNumber'] == result[2]
             assert credentials['SessionToken'] == result[3]
-        if os.path.exists(aws_config_dir):
-            shutil.move(aws_config_dir, 'tmp%s' % aws_config_dir)
+#        if os.path.exists(aws_config_dir):
+#            shutil.move(aws_config_dir, 'tmp%s' % aws_config_dir)
         credentials = read_creds_from_aws_credentials_file(profile_name = 'default')
-        shutil.move('tmp%s' % aws_config_dir, aws_config_dir)
+#        shutil.move('tmp%s' % aws_config_dir, aws_config_dir)
 
 
     def test_read_creds_from_csv(self):
