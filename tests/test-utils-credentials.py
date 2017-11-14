@@ -68,7 +68,8 @@ class TestOpinelCredentialsClass:
             creds = init_sts_session('travislike-sts', fake_creds, 900, 'opinelunittesting', False)
         except:
             pass
-        shutil.copy('tmpcredentials', credentials_file)
+        if os.path.isfile('tmpcredentials'):
+            shutil.copy('tmpcredentials', credentials_file)
 
 
     def test_read_creds_from_aws_credentials_file(self):
