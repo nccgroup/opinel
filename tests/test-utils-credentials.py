@@ -56,7 +56,10 @@ class TestOpinelCredentialsClass:
         self.check_credentials_dict(creds)
 
     def test_init_sts_session(self):
-        creds = init_sts_session('travislike-sts', self.creds, 900, 'opinelunittesting', False)
+        credentials_file = os.path.join(os.path.expanduser('~'), '.aws/credentials')
+        if os.path.isfile(credentials_file):
+            shutil.copy(credentials_file, 'tmpcredentials')
+        creds = init_sts_session('travislike-sts', self.creds, 900, 'opinelunittesting', True)
         self.check_credentials_dict(creds)
         fake_creds = copy.deepcopy(self.creds)
         fake_creds['SerialNumber'] = 'arn:aws:iam::179374595322:mfa/fake'
@@ -65,6 +68,7 @@ class TestOpinelCredentialsClass:
             creds = init_sts_session('travislike-sts', fake_creds, 900, 'opinelunittesting', False)
         except:
             pass
+        shutil.copy('tmpcredentials', credentials_file)
 
 
     def test_read_creds_from_aws_credentials_file(self):
