@@ -215,7 +215,7 @@ def update_cloudformation_resource_from_template(api_client, resource_type, name
         return response['OperationId']
     except Exception as e:
         if resource_type == 'Stack' and e.response['Error']['Code'] == 'ValidationError' and e.response['Error']['Message'] == 'No updates are to be performed.':
-            print ' Already up to date.'
+            printInfo(' Already up to date.')
         else:
             printException(e)
             printError(' Failed.')
