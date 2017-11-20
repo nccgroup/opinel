@@ -1,0 +1,12 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "Opinel unit test 001",
+    "Resources": {
+        "OpinelTopic001": {
+            "Type": "AWS::SNS::Topic",
+            "Properties" : {
+                "TopicName": "OpinelUnitTestTopic001"
+            }
+        }
+    }
+}

@@ -1,0 +1,20 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "Opinel unit test 002",
+    "Parameters": {
+        "Param002": {
+            "Type": "String",
+            "Description": "A parameter",
+            "MinLength": "1",
+            "MaxLength": "100"
+        }
+    },
+    "Resources": {
+        "OpinelTopic002": {
+            "Type": "AWS::SNS::Topic",
+            "Properties" : {
+                "TopicName": "OpinelUnitTestTopic002"
+            }
+        }
+    }
+}
