@@ -131,7 +131,27 @@ def make_awsrecipes_stack_name(template_path):
     :param template_path:
     :return:
     """
-    return 'AWSRecipes-%s' % '-'.join(os.path.basename(template_path).split('-')[:-1])
+    return make_prefixed_stack_name('AWSRecipes', template_path)
+
+
+def make_opinel_stack_name(template_path):
+    """
+
+    :param template_path:"
+    :return:
+    """
+    return make_prefixed_stack_name('Opinel', template_path)
+
+
+def make_prefixed_stack_name(prefix, template_path):
+    """
+
+    :param prefix:
+    :param template_path:
+    """
+    parts = os.path.basename(template_path).split('-')
+    parts = parts if len(parts) == 1 else parts[:-1]
+    return ('%s-%s' % (prefix, '-'.join(parts))).split('.')[0]
 
 
 def prepare_cloudformation_params(stack_name, template_path, template_parameters, resource_type, tags=[], need_on_failure=False):
