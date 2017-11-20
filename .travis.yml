@@ -22,6 +22,7 @@ script:
     - nosetests --with-coverage tests/test-utils-cli_parser.py
     - nosetests --with-coverage tests/test-utils-credentials.py
     - nosetests --with-coverage tests/test-utils-conditions.py
+    - nosetests --with-coverage tests/test-services-cloudformation.py
     - nosetests --with-coverage tests/test-services-cloudtrail.py
     - nosetests --with-coverage tests/test-services-iam.py
     - nosetests --with-coverage tests/test-services-organizations.py
