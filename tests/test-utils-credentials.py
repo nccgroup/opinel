@@ -8,14 +8,36 @@ class TestOpinelCredentialsClass:
 
     def setup(self):
         self.creds = read_creds_from_environment_variables()
+        self.write_creds = False
         if self.creds['AccessKeyId'] == None:
             self.creds = read_creds('travislike')
+            self.write_creds = True
+        # Backup current config
+        self.tmpaws_config_dir = aws_config_dir + 'tmp'
+        if os.path.exists(aws_config_dir):
+            shutil.move(aws_config_dir, self.tmpaws_config_dir)
+        # Import configs
+        os.mkdir(aws_config_dir)
+        shutil.copy('tests/data/credentials', aws_credentials_file)
+        shutil.copy('tests/data/config', aws_config_file)
+        # Write the test credentials
+        if self.write_creds:
+            write_creds_to_aws_credentials_file('travislike', self.creds)
+ 
+
+    def teardown(self):
+        # Reset original config
+        shutil.rmtree(aws_config_dir)
+        if os.path.exists(self.tmpaws_config_dir):
+            shutil.move(self.tmpaws_config_dir, aws_config_dir)
+
 
     def cmp(self, a, b):
         """
         Implement cmp() for Python3 tests
         """
         return (a > b) - (a < b)
+
 
     def check_credentials_dict(self, creds):
         assert 'AccessKeyId' in creds
@@ -25,9 +47,11 @@ class TestOpinelCredentialsClass:
         #assert 'SerialNumber' in creds
         #assert 'TokenCode' in creds
 
+
     def check_credentials_not_empty(self, creds):
         assert (creds['AccessKeyId'].startswith('AKIA') or creds['AccessKeyId'].startswith('ASIA'))
         assert (creds['SecretAccessKey'] != None)
+
 
     def test_assume_role(self):
         creds = assume_role('Scout2', self.creds, 'arn:aws:iam::179374595322:role/Scout2', 'opinelunittesting')
@@ -43,22 +67,23 @@ class TestOpinelCredentialsClass:
         except Exception as e:
             pass
 
+
     def test_get_cached_credentials_filename(self):
         filename = get_cached_credentials_filename('Scout2', 'arn:aws:iam::179374595322:role/Scout2')
         assert(filename.endswith('.aws/cli/cache/Scout2--arn_aws_iam__179374595322_role-Scout2.json'))
+
 
     def test_generate_password(self):
         password = generate_password(16)
         assert len(password) == 16
 
+
     def test_init_creds(self):
         creds = init_creds()
         self.check_credentials_dict(creds)
 
+
     def test_init_sts_session(self):
-        credentials_file = os.path.join(os.path.expanduser('~'), '.aws/credentials')
-        if os.path.isfile(credentials_file):
-            shutil.copy(credentials_file, 'tmpcredentials')
         creds = init_sts_session('travislike-sts', self.creds, 900, 'opinelunittesting', True)
         self.check_credentials_dict(creds)
         fake_creds = copy.deepcopy(self.creds)
@@ -68,8 +93,6 @@ class TestOpinelCredentialsClass:
             creds = init_sts_session('travislike-sts', fake_creds, 900, 'opinelunittesting', False)
         except:
             pass
-        if os.path.isfile('tmpcredentials'):
-            shutil.copy('tmpcredentials', credentials_file)
 
 
     def test_read_creds_from_aws_credentials_file(self):
@@ -86,12 +109,6 @@ class TestOpinelCredentialsClass:
             assert credentials['SecretAccessKey'] == result[1]
             assert credentials['SerialNumber'] == result[2]
             assert credentials['SessionToken'] == result[3]
-        tmp_aws_config_dir = 'tmp_aws_config_dir'
-        if os.path.exists(aws_config_dir):
-            shutil.move(aws_config_dir, tmp_aws_config_dir)
-        credentials = read_creds_from_aws_credentials_file(profile_name = 'default')
-        if os.path.exists(tmp_aws_config_dir):
-            shutil.move(tmp_aws_config_dir, aws_config_dir)
 
 
     def test_read_creds_from_csv(self):
@@ -115,8 +132,10 @@ class TestOpinelCredentialsClass:
         assert creds[2] == 'arn:aws:iam::123456789111:mfa/l01cd3v'
         return
 
+
     def test_read_creds_from_ec2_instance_metadata(self):
         pass
+
 
     def test_read_creds_from_environment_variables(self):
         os.environ['AWS_ACCESS_KEY_ID'] = 'environment-AKIAJJ5TE81PVO72WPTQ'
@@ -128,6 +147,7 @@ class TestOpinelCredentialsClass:
         assert creds['AccessKeyId'] == 'environment-AKIAJJ5TE81PVO72WPTQ'
         assert creds['SecretAccessKey'] == 'environment-67YkvxJ8Qx0EI97NvlIyM9kVz/uKddd0z0uGj123'
         assert creds['SessionToken'] == 'environment-session/////token'
+
 
     def test_read_profile_from_aws_config_file(self):
         role_arn, source_profile, mfa_serial = read_profile_from_aws_config_file('l01cd3v-role1', config_file='tests/data/config')
@@ -143,33 +163,46 @@ class TestOpinelCredentialsClass:
         assert source_profile == 'l01cd3v-2'
         assert mfa_serial == 'arn:aws:iam::123456789333:mfa/l01cd3v'
 
+
     def test_get_profiles_from_aws_credentials_file(self):
         profiles1 = get_profiles_from_aws_credentials_file(credentials_files=['tests/data/credentials'])
         profiles2 = sorted(['l01cd3v-1', 'l01cd3v-2', 'l01cd3v-3', 'l01cd3v-4', 'testprofile'])
         assert profiles1 == profiles2
 
+
     def test_show_profiles_from_aws_credentials_file(self):
         show_profiles_from_aws_credentials_file(credentials_files=['tests/data/credentials'])
 
+
     def test_write_creds_to_aws_credentials_file(self):
-        tmpcredentialsfile = 'tmpcredentialsfile'
-        if os.path.isfile(tmpcredentialsfile):
-            os.remove(tmpcredentialsfile)
-            shutil.copy('tests/data/credentials', tmpcredentialsfile)
         creds = init_creds()
         creds['AccessKeyId'] = 'AKIAJJ5TE81PVO72WPTQ'
         creds['SecretAccessKey'] = '67YkvxJ8Qx0EI97NvlIyM9kVz/uKddd0z0uGj123'
-        write_creds_to_aws_credentials_file('testprofile', creds, tmpcredentialsfile)
+        write_creds_to_aws_credentials_file('testprofile', creds)
         creds['SessionToken'] = 'opineltestsessiontoken'
         creds['SerialNumber'] = 'arn:aws:iam::123456789111:mfa/l01cd3v'
         creds['Expiration'] = '2017-04-19 02:23:16+00:00'
-        write_creds_to_aws_credentials_file('testprofile', creds, tmpcredentialsfile)
-        write_creds_to_aws_credentials_file('testprofile', creds, tmpcredentialsfile)
-        os.remove(tmpcredentialsfile)
+        write_creds_to_aws_credentials_file('testprofile', creds)
+        write_creds_to_aws_credentials_file('testprofile', creds)
+
 
     def test_complete_profile(self):
         pass
 
+
     def test_read_creds(self):
         creds = read_creds('travislike')
         creds = read_creds('', csv_file='tests/data/accessKeys1.csv')
+        # Assume role within read_creds()
+        creds = read_creds('scout2fortravis')
+        # Read from CLI cache
+        creds = read_creds('scout2fortravis')
+        # Pretend cached creds have expired
+        filename = get_cached_credentials_filename('scout2fortravis', 'arn:aws:iam::179374595322:role/Scout2')
+        printError(str(filename))
+        with open(filename, 'rt') as f:
+            creds = json.load(f)
+        creds['Credentials']['Expiration'] = '2016-11-21 22:32:18+00:00'
+        with open(filename, 'wt') as f:
+            f.write(json.dumps(creds))
+        creds = read_creds('scout2fortravis')

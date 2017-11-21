@@ -11,3 +11,7 @@ aws_mfa_serial = arn:aws:iam::123456789222:mfa/l01cd3v
 role_arn = arn:aws:iam::123456789012:role/Role3
 source_profile = l01cd3v-2
 mfa_serial = arn:aws:iam::123456789333:mfa/l01cd3v
+
+[profile scout2fortravis]
+role_arn = arn:aws:iam::179374595322:role/Scout2
+source_profile = travislike
