@@ -88,3 +88,6 @@ class TestOpinelAWS:
         iam_client = connect_service('iam', self.creds)
         users = handle_truncated_response(iam_client.list_users, {'MaxItems': 5}, ['Users'])['Users']
         assert (len(users) > 5)
+
+    def test_is_throttled(self):
+        pass
