@@ -75,11 +75,11 @@ class TestOpinelServicesCloudformation:
         assert (make_awsrecipes_stack_name('/home/l01cd3v/test.json') == 'AWSRecipes-test')
 
 
-    def make_opinel_stack_name(self):
+    def test_make_opinel_stack_name(self):
         assert (make_opinel_stack_name('/home/l01cd3v/test.json') == 'Opinel-test')
 
 
-    def make_prefixed_stack_name(self):
+    def test_make_prefixed_stack_name(self):
         assert (make_prefixed_stack_name('test', '/home/l01cd3v/test.json') == 'test-test')
         assert (make_prefixed_stack_name('test', 'C:\Users\l01cd3v\test.json') == 'test-test')
         assert (make_prefixed_stack_name('test', 'test') == 'test-test')
