@@ -31,41 +31,41 @@ class TestOpinelServicesCloudformation:
         # Tested by other functions...
         pass
 
-#    def test_create_stack(self):
-#        #create_stack(api_client, stack_name, template_path, template_parameters=[], tags=[], quiet=False)
-#        stack_name = self.make_travisname('OpinelUnitTestStack001')
-#        create_stack(self.api_client, stack_name, 'tests/data/cloudformation-001.json')
-#        self.cleanup['stacks'].append(stack_name)
-#        try:
-#            tags = [ {'Key': 'Opinel', 'Value': 'Opinel'} ]
-#            create_stack(self.api_client, stack_name, 'tests/data/cloudformation-001.json', tags = tags)
-#        except:
-#            pass
-#        stack_name = self.make_travisname('OpinelUnitTestStack002')
-#        params = [ 'Param002', 'l01cd3v' ]
-#        create_stack(self.api_client, stack_name, 'tests/data/cloudformation-002.json', params)
-#        self.cleanup['stacks'].append(stack_name)
+    def test_create_stack(self):
+        #create_stack(api_client, stack_name, template_path, template_parameters=[], tags=[], quiet=False)
+        stack_name = self.make_travisname('OpinelUnitTestStack001')
+        create_stack(self.api_client, stack_name, 'tests/data/cloudformation-001.json')
+        self.cleanup['stacks'].append(stack_name)
+        try:
+            tags = [ {'Key': 'Opinel', 'Value': 'Opinel'} ]
+            create_stack(self.api_client, stack_name, 'tests/data/cloudformation-001.json', tags = tags)
+        except:
+            pass
+        stack_name = self.make_travisname('OpinelUnitTestStack002')
+        params = [ 'Param002', 'l01cd3v' ]
+        create_stack(self.api_client, stack_name, 'tests/data/cloudformation-002.json', params)
+        self.cleanup['stacks'].append(stack_name)
 
 
-#    def test_create_or_update_stack(self):
-#        stack_name = self.make_travisname('OpinelUnitTestStack003')
-#        create_or_update_stack(self.api_client, stack_name, 'tests/data/cloudformation-003.json')
-#        timer = 0
-#        while True:
-#            printError('Checking the stack\'s status...')
-#            time.sleep(5)
-#            timer += 5
-#            stack_info = self.api_client.describe_stacks(StackName = stack_name)
-#            if timer > 120 or stack_info['Stacks'][0]['StackStatus'] != 'CREATE_IN_PROGRESS':
-#                break
-#        printError('Ready for update !')
-#        create_or_update_stack(self.api_client, stack_name, 'tests/data/cloudformation-003.json')
-#        self.cleanup['stacks'].append(stack_name)
-#        # Trigger exception
-#        try:
-#            create_or_update_stack(self.api_client. stack_name, 'tests/data/cloudformation-003bad.json')
-#        except:
-#            pass
+    def test_create_or_update_stack(self):
+        stack_name = self.make_travisname('OpinelUnitTestStack003')
+        create_or_update_stack(self.api_client, stack_name, 'tests/data/cloudformation-003.json')
+        timer = 0
+        while True:
+            printError('Checking the stack\'s status...')
+            time.sleep(5)
+            timer += 5
+            stack_info = self.api_client.describe_stacks(StackName = stack_name)
+            if timer > 120 or stack_info['Stacks'][0]['StackStatus'] != 'CREATE_IN_PROGRESS':
+                break
+        printError('Ready for update !')
+        create_or_update_stack(self.api_client, stack_name, 'tests/data/cloudformation-003.json')
+        self.cleanup['stacks'].append(stack_name)
+        # Trigger exception
+        try:
+            create_or_update_stack(self.api_client. stack_name, 'tests/data/cloudformation-003bad.json')
+        except:
+            pass
 
 
     def test_create_stack_instances(self):
