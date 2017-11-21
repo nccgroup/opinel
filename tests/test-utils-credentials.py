@@ -109,6 +109,10 @@ class TestOpinelCredentialsClass:
             assert credentials['SecretAccessKey'] == result[1]
             assert credentials['SerialNumber'] == result[2]
             assert credentials['SessionToken'] == result[3]
+        os.remove(aws_credentials_file)
+        creds = read_creds_from_aws_credentials_file('test')
+        shutil.rmtree(aws_config_dir)
+        creds = read_creds_from_aws_credentials_file('test')
 
 
     def test_read_creds_from_csv(self):
@@ -134,7 +138,7 @@ class TestOpinelCredentialsClass:
 
 
     def test_read_creds_from_ec2_instance_metadata(self):
-        pass
+        creds = read_creds_from_ec2_instance_metadata()
 
 
     def test_read_creds_from_environment_variables(self):
@@ -162,6 +166,8 @@ class TestOpinelCredentialsClass:
         assert role_arn == 'arn:aws:iam::123456789012:role/Role3'
         assert source_profile == 'l01cd3v-2'
         assert mfa_serial == 'arn:aws:iam::123456789333:mfa/l01cd3v'
+        os.remove(aws_config_file)
+        role_arn, source_profile, mfa_serial = read_profile_from_aws_config_file('l01cd3v-role1')
 
 
     def test_get_profiles_from_aws_credentials_file(self):
@@ -183,6 +189,8 @@ class TestOpinelCredentialsClass:
         creds['SerialNumber'] = 'arn:aws:iam::123456789111:mfa/l01cd3v'
         creds['Expiration'] = '2017-04-19 02:23:16+00:00'
         write_creds_to_aws_credentials_file('testprofile', creds)
+        write_creds_to_aws_credentials_file('testprofile', creds)
+        shutil.rmtree(aws_config_dir)
         write_creds_to_aws_credentials_file('testprofile', creds)
 
 
@@ -206,3 +214,4 @@ class TestOpinelCredentialsClass:
         with open(filename, 'wt') as f:
             f.write(json.dumps(creds))
         creds = read_creds('scout2fortravis')
+        creds = read_creds('default')
