@@ -3,6 +3,7 @@
 import json
 import os
 import re
+import time
 
 from opinel.utils.aws import connect_service, handle_truncated_response
 from opinel.utils.console import printDebug, printInfo, printError, printException, prompt_4_yes_no
@@ -59,7 +60,7 @@ def create_or_update_stack(api_client, stack_name, template_path, template_param
     try:
         return create_stack(api_client, stack_name, template_path, template_parameters, tags, quiet)
     except Exception as e:
-        if type(e.response) == dict and hasattr(e, 'response') and 'Error' in e.response and e.response['Error']['Code'] == 'AlreadyExistsException':
+        if hasattr(e, 'response') and type(e.response) == dict and 'Error' in e.response and e.response['Error']['Code'] == 'AlreadyExistsException':
             printInfo('Stack already exists... ', newLine = False)
             update_stack(api_client, stack_name, template_path, template_parameters, quiet)
         else:
@@ -98,6 +99,26 @@ def create_stack_instances(api_client, stack_set_name, account_ids, regions, qui
     if not quiet:
         printInfo('Successfully started operation Id %s' % response['OperationId'])
     return response['OperationId']
+
+
+def delete_stack_set(api_client, stack_set_name, timeout = 60 * 5):
+    """
+    """
+    printDebug('Deleting stack set %s' % stack_set_name)
+    # Check for instances
+    stack_instances = handle_truncated_response(api_client.list_stack_instances, {'StackSetName': stack_set_name}, ['Summaries'])['Summaries']
+    account_ids = []
+    regions = []
+    if len(stack_instances) > 0:
+        for si in stack_instances:
+            if si['Account'] not in account_ids:
+                account_ids.append(si['Account'])
+            if si['Region'] not in regions:
+                regions.append(si['Region'])
+            printError(json.dumps(si, indent = 4))
+        operation_id = api_client.delete_stack_instances(StackSetName = stack_set_name, Accounts = account_ids, Regions = regions, RetainStacks = False)['OperationId']
+        wait_for_operation(api_client, stack_set_name, operation_id)
+    api_client.delete_stack_set(StackSetName = stack_set_name)
 
 
 def get_stackset_ready_accounts(credentials, account_ids, quiet=True):
@@ -241,3 +262,34 @@ def update_cloudformation_resource_from_template(api_client, resource_type, name
             printException(e)
             printError(' Failed.')
             printDebug(e.response['Error']['Code'])
+
+
+def wait_for_operation(api_client, stack_set_name, operation_id, timeout = 5 * 60):
+    printDebug('Waiting for operation %s on stack set %s...' % (operation_id, stack_set_name))
+    timer = 0
+    while True:
+        info = api_client.describe_stack_set_operation(StackSetName = stack_set_name, OperationId = operation_id)
+        status = info['StackSetOperation']['Status']
+        if status not in ['RUNNING', 'STOPPING']:
+            break
+        sec = 5
+        printError('Operation status is \'%s\'... waiting %d seconds until next check...' % (status, sec))
+        if timer > timeout:
+            printError('Timed out.')
+            break
+        time.sleep(sec)
+        timer += sec
+
+
+def wait_for_stack_set(api_client, stack_set_name, timeout = 60):
+    timer = 0
+    while True:
+        printError('Checking the stack set\'s status...')
+        time.sleep(5)
+        timer += 5
+        info = api_client.describe_stack_set(StackSetName = stack_set_name)
+        if info['StackSet']['Status'] == 'ACTIVE':
+            break
+        if timer > timeout:
+            printError('Timed out.')
+            break
