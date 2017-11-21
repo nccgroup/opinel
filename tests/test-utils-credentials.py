@@ -145,7 +145,7 @@ class TestOpinelCredentialsClass:
 
     def test_get_profiles_from_aws_credentials_file(self):
         profiles1 = get_profiles_from_aws_credentials_file(credentials_files=['tests/data/credentials'])
-        profiles2 = sorted(['l01cd3v-1', 'l01cd3v-2', 'l01cd3v-3', 'l01cd3v-4'])
+        profiles2 = sorted(['l01cd3v-1', 'l01cd3v-2', 'l01cd3v-3', 'l01cd3v-4', 'testprofile'])
         assert profiles1 == profiles2
 
     def test_show_profiles_from_aws_credentials_file(self):
