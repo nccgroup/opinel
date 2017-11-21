@@ -59,7 +59,7 @@ def create_or_update_stack(api_client, stack_name, template_path, template_param
     try:
         return create_stack(api_client, stack_name, template_path, template_parameters, tags, quiet)
     except Exception as e:
-        if type(e.response) == dict and hasattr('response', e) and 'Error' in e.response and e.response['Error']['Code'] == 'AlreadyExistsException':
+        if type(e.response) == dict and hasattr(e, 'response') and 'Error' in e.response and e.response['Error']['Code'] == 'AlreadyExistsException':
             printInfo('Stack already exists... ', newLine = False)
             update_stack(api_client, stack_name, template_path, template_parameters, quiet)
         else:
