@@ -264,32 +264,32 @@ def update_cloudformation_resource_from_template(api_client, resource_type, name
             printDebug(e.response['Error']['Code'])
 
 
-def wait_for_operation(api_client, stack_set_name, operation_id, timeout = 5 * 60):
+def wait_for_operation(api_client, stack_set_name, operation_id, timeout = 5 * 60, increment = 5):
     printDebug('Waiting for operation %s on stack set %s...' % (operation_id, stack_set_name))
     timer = 0
     while True:
+        if timer >= timeout:
+            printError('Timed out.')
+            break
         info = api_client.describe_stack_set_operation(StackSetName = stack_set_name, OperationId = operation_id)
         status = info['StackSetOperation']['Status']
         if status not in ['RUNNING', 'STOPPING']:
             break
-        sec = 5
-        printError('Operation status is \'%s\'... waiting %d seconds until next check...' % (status, sec))
-        if timer > timeout:
-            printError('Timed out.')
-            break
-        time.sleep(sec)
-        timer += sec
+        printError('Operation status is \'%s\'... waiting %d seconds until next check...' % (status, increment))
+        time.sleep(increment)
+        timer += increment
 
 
-def wait_for_stack_set(api_client, stack_set_name, timeout = 60):
+def wait_for_stack_set(api_client, stack_set_name, timeout = 60, increment = 5):
+    printDebug('Waiting for stack set %s to be ready...' % stack_set_name)
     timer = 0
     while True:
+        if timer >= timeout:
+            printError('Timed out.')
+            break
         printError('Checking the stack set\'s status...')
-        time.sleep(5)
-        timer += 5
+        time.sleep(increment)
+        timer += increment
         info = api_client.describe_stack_set(StackSetName = stack_set_name)
         if info['StackSet']['Status'] == 'ACTIVE':
-            break
-        if timer > timeout:
-            printError('Timed out.')
             break

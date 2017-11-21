@@ -80,6 +80,7 @@ class TestOpinelServicesCloudformation:
     def test_create_stack_set(self):
         stack_set_name = self.make_travisname('OpinelUnitTestStackSet001')
         create_stack_set(self.api_client, stack_set_name, 'tests/data/cloudformation-004.json')
+        wait_for_stack_set(self.api_client, stack_set_name, 0)
         self.cleanup['stacksets'].append(stack_set_name)
 
 
@@ -89,7 +90,11 @@ class TestOpinelServicesCloudformation:
 
 
     def test_get_stackset_ready_accounts(self):
-        pass
+        accounts_ready = [ get_aws_account_id(self.creds) ]
+        test1 = get_stackset_ready_accounts(self.creds, accounts_ready)
+        assert (test1 == accounts_ready)
+        test2 = get_stackset_ready_accounts(self.creds, accounts_ready + [ '123456789012' ])
+        assert (test2 == accounts_ready)
 
 
     def test_make_awsrecipes_stack_name(self):
@@ -117,6 +122,7 @@ class TestOpinelServicesCloudformation:
 
     def test_update_stack(self):
         pass
+
     def test_update_stack_set(self):
         pass
 
@@ -125,7 +131,8 @@ class TestOpinelServicesCloudformation:
         pass
 
     def test_wait_for_operation(self):
-        pass
+        wait_for_operation(self.api_client, 'name', 'id', 0)
+
 
     def test_wait_for_stack_set(self):
         pass
