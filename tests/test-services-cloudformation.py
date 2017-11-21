@@ -81,7 +81,6 @@ class TestOpinelServicesCloudformation:
 
     def test_make_prefixed_stack_name(self):
         assert (make_prefixed_stack_name('test', '/home/l01cd3v/test.json') == 'test-test')
-        assert (make_prefixed_stack_name('test', 'C:\Users\l01cd3v\test.json') == 'test-test')
         assert (make_prefixed_stack_name('test', 'test') == 'test-test')
 
 
