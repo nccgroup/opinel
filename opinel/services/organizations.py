@@ -17,7 +17,8 @@ def get_organization_accounts(api_client, exceptions = [], quiet = True):
     org_accounts = handle_truncated_response(api_client.list_accounts, {}, ['Accounts'])['Accounts']
     if not quiet:
         printInfo('Found %d accounts in the organization.' % len(org_accounts))
-        printDebug(str(org_accounts))
+        for account in org_accounts:
+            printDebug(str(account))
     if len(exceptions):
         filtered_accounts = []
         for account in org_accounts:
