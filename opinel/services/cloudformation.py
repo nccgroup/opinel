@@ -170,9 +170,10 @@ def prepare_cloudformation_params(stack_name, template_path, template_parameters
     params['%sName' % resource_type] = stack_name
     params['TemplateBody'] = template_body
     if len(template_parameters):
-        params['Parameters'] = ([],)
+        params['Parameters'] = []
         it = iter(template_parameters)
         for param in it:
+            printError('Param:: %s' % param)
             params['Parameters'].append({'ParameterKey': param,'ParameterValue': next(it)})
 
     if len(tags):

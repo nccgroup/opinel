@@ -31,20 +31,20 @@ class TestOpinelServicesCloudformation:
         # Tested by other functions...
         pass
 
-#    def test_create_stack(self):
-#        #create_stack(api_client, stack_name, template_path, template_parameters=[], tags=[], quiet=False)
-#        stack_name = self.make_travisname('OpinelUnitTestStack001')
-#        create_stack(self.api_client, stack_name, 'tests/data/cloudformation-001.json')
-#        self.cleanup['stacks'].append(stack_name)
-#        try:
-#            tags = [ {'Key': 'Opinel', 'Value': 'Opinel'} ]
-#            create_stack(self.api_client, stack_name, 'tests/data/cloudformation-001.json', tags = tags)
-#        except:
-#            pass
-#        stack_name = self.make_travisname('OpinelUnitTestStack002')
-#        params = [ {'ParameterKey': 'Parameter001', 'ParameterValue': 'l01cd3v' } ]
-#        create_stack(self.api_client, stack_name, 'tests/data/cloudformation-002', params)
-#        self.cleanup['stacks'].append(stack_name)
+    def test_create_stack(self):
+        #create_stack(api_client, stack_name, template_path, template_parameters=[], tags=[], quiet=False)
+        stack_name = self.make_travisname('OpinelUnitTestStack001')
+        create_stack(self.api_client, stack_name, 'tests/data/cloudformation-001.json')
+        self.cleanup['stacks'].append(stack_name)
+        try:
+            tags = [ {'Key': 'Opinel', 'Value': 'Opinel'} ]
+            create_stack(self.api_client, stack_name, 'tests/data/cloudformation-001.json', tags = tags)
+        except:
+            pass
+        stack_name = self.make_travisname('OpinelUnitTestStack002')
+        params = [ 'Param002', 'l01cd3v' ]
+        create_stack(self.api_client, stack_name, 'tests/data/cloudformation-002.json', params)
+        self.cleanup['stacks'].append(stack_name)
 
 
     def test_create_or_update_stack(self):
@@ -70,21 +70,30 @@ class TestOpinelServicesCloudformation:
     def test_get_stackset_ready_accounts(self):
         pass
 
+
     def test_make_awsrecipes_stack_name(self):
         assert (make_awsrecipes_stack_name('/home/l01cd3v/test.json') == 'AWSRecipes-test')
 
+
     def make_opinel_stack_name(self):
         assert (make_opinel_stack_name('/home/l01cd3v/test.json') == 'Opinel-test')
+
 
     def make_prefixed_stack_name(self):
         assert (make_prefixed_stack_name('test', '/home/l01cd3v/test.json') == 'test-test')
         assert (make_prefixed_stack_name('test', 'C:\Users\l01cd3v\test.json') == 'test-test')
         assert (make_prefixed_stack_name('test', 'test') == 'test-test')
 
+
     def test_prepare_cloudformation_params(self):
+        # Should be tested by other calls
         pass
+
+
     def test_update_cloudformation_resource_from_template(self):
         pass
+
+
     def test_update_stack(self):
         pass
     def test_update_stack_set(self):
@@ -93,8 +102,6 @@ class TestOpinelServicesCloudformation:
 
     def teardown(self):
         if len(self.cleanup['stacks']):
-            printError('Waiting 10 seconds before initiating stack deletion...')
-            time.sleep(10)
             for stack_name in self.cleanup['stacks']:
                 self.api_client.delete_stack(StackName = stack_name)
 
