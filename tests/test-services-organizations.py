@@ -76,7 +76,7 @@ class TestOpinelServicesOrganizations:
     def check_ous(self, ous):
         ou_found = False
         for ou in ous:
-            if ou['Id'] == 'r-6qnh':
+            if ou['Id'] == 'ou-6qnh-jqod4xev':
                 ou_found = True
                 break
         assert (ou_found)
