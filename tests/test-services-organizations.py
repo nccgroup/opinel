@@ -34,6 +34,8 @@ class TestOpinelServicesOrganizations:
         except Exception as e:
             assert (e.response['Error']['Code'] == 'AccessDeniedException')
         assert ('990492604467' in get_organization_account_ids(self.api_client))
+        assert ('990492604467' not in get_organization_account_ids(self.api_client, exceptions = ['990492604467']))
+        get_organization_account_ids(self.api_client, quiet = False)
 
 
     def test_get_organization_accounts(self):
