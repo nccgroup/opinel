@@ -11,13 +11,19 @@ def get_organization_account_ids(api_client, exceptions = [], quiet = True):
     return [ account['Id'] for account in org_accounts ]
 
 
-def get_organization_accounts(api_client, quiet = True):
+def get_organization_accounts(api_client, exceptions = [], quiet = True):
 
     # List all accounts in the organization
     org_accounts = handle_truncated_response(api_client.list_accounts, {}, ['Accounts'])['Accounts']
     if not quiet:
         printInfo('Found %d accounts in the organization.' % len(org_accounts))
         printDebug(str(org_accounts))
+    if len(exceptions):
+        filtered_accounts = []
+        for account in org_accounts:
+            if account['Id'] not in exceptions:
+                filtered_accounts.append(account)
+        org_accounts = filtered_accounts
     return org_accounts
 
 
