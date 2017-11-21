@@ -46,7 +46,6 @@ class TestOpinelAWS:
             pass
 
 
-
     def test_get_aws_account_id(self):
         account_id = get_aws_account_id(self.creds)
         assert (account_id == '179374595322')
@@ -77,7 +76,9 @@ class TestOpinelAWS:
 
 
     def test_get_partition_name(self):
-        pass
+        partition_name = get_partition_name(self.creds)
+        assert (partition_name == 'aws')
+
 
     def test_get_username(self):
         username = get_username(self.creds)
