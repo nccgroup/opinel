@@ -26,7 +26,8 @@ class TestOpinelUtilsAWSProfiles(object):
 
     def test_list(self):
         profiles = AWSProfiles.list()
-        assert(set(['l01cd3v-1', 'l01cd3v-2', 'l01cd3v-role1', 'l01cd3v-role2', 'l01cd3v-role3', 'l01cd3v-3', 'l01cd3v-4', 'testprofile']) == set(profiles))
+        printDebug(str(profiles))
+        assert(set(['l01cd3v-1', 'l01cd3v-2', 'l01cd3v-role1', 'l01cd3v-role2', 'l01cd3v-role3', 'l01cd3v-3', 'l01cd3v-4', 'testprofile', 'scout2fortravis']) == set(profiles))
         profiles = AWSProfiles.list(names = 'l01cd3v-role.*')
         printDebug(str(profiles))
         assert(set(['l01cd3v-role1', 'l01cd3v-role2', 'l01cd3v-role3']) == set(profiles))
