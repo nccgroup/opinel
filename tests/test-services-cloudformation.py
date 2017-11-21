@@ -61,6 +61,11 @@ class TestOpinelServicesCloudformation:
         printError('Ready for update !')
         create_or_update_stack(self.api_client, stack_name, 'tests/data/cloudformation-003.json')
         self.cleanup['stacks'].append(stack_name)
+        # Trigger exception
+        try:
+            create_or_update_stack(self.api_client. stack_name, 'tests/data/cloudformation-003bad.json')
+        except:
+            pass
 
 
     def test_create_stack_instances(self):
