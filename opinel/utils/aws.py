@@ -3,6 +3,7 @@
 import boto3
 from botocore.session import Session
 from collections import Counter
+import time
 
 from opinel.utils.console import printInfo, printException
 
@@ -118,15 +119,31 @@ def handle_truncated_response(callback, params, entities):
     for entity in entities:
         results[entity] = []
     while True:
-        marker_found = False
-        response = callback(**params)
-        for entity in entities:
-            if entity in response:
-                results[entity] = results[entity] + response[entity]
-        for marker_name in ['NextToken', 'Marker']:
-            if marker_name in response and response[marker_name]:
-                params[marker_name] = response[marker_name]
-                marker_found = True
-        if not marker_found:
-            break
+        try:
+            marker_found = False
+            response = callback(**params)
+            for entity in entities:
+                if entity in response:
+                    results[entity] = results[entity] + response[entity]
+            for marker_name in ['NextToken', 'Marker']:
+                if marker_name in response and response[marker_name]:
+                    params[marker_name] = response[marker_name]
+                    marker_found = True
+            if not marker_found:
+                break
+        except Exception as e:
+            if is_throttled(e):
+                time.sleep(1)
+            else:
+                raise e
     return results
+
+
+def is_throttled(e):
+    """
+    Determines whether the exception is due to API throttling.
+
+    :param e:                           Exception raised
+    :return:                            True if it's a throttling exception else False
+    """
+    return True if  (hasattr(e, 'response') and 'Error' in e.response and e.response['Error']['Code'] in [ 'Throttling', 'RequestLimitExceeded', 'ThrottlingException', 'TooManyRequestsException' ]) else False
