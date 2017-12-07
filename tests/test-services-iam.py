@@ -70,7 +70,11 @@ class TestOpinelServicesIAM:
 
 
     def test_delete_user(self):
-        # Tested as part of teardown
+        # Mostly tested as part of teardown
+        try:
+            delete_user(self.api_client, 'PhonyUserWithMFA')
+        except Exception as e:
+            pass
         pass
 
 
