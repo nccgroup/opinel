@@ -28,19 +28,19 @@ class TestOpinelServicesIAM:
         return '%s-%s-%s' % (testname, binascii.b2a_hex(os.urandom(4)).decode('utf-8'), self.python)
 
 
-    def assert_group_create(self, groups_data, error_count):
+    def assert_group_create(self, groups_data, error_count, force_add = False):
         for group_data in groups_data:
-            self.assert_create('groups', group_data, error_count)
+            self.assert_create('groups', group_data, error_count, force_add)
 
 
-    def assert_user_create(self, user_data, error_count):
-        self.assert_create('users', user_data, error_count)
+    def assert_user_create(self, user_data, error_count, force_add = False):
+        self.assert_create('users', user_data, error_count, force_add)
 
 
-    def assert_create(self, resource_type, resource_data, error_count):
+    def assert_create(self, resource_type, resource_data, error_count, force_add = False):
         assert len(resource_data['errors']) == error_count
         nameattr = '%sname' % resource_type[:-1]
-        if error_count == 0:
+        if force_add or error_count == 0:
             printDebug('Successfully created %s %s' % (resource_type[:-1], resource_data[nameattr]))
             self.cleanup[resource_type].append(resource_data[nameattr])
 
@@ -53,7 +53,7 @@ class TestOpinelServicesIAM:
         user_data = create_user(self.api_client, self.make_travisname('OpinelUnitTest002'), 'BlockedUsers')
         self.assert_user_create(user_data, 0)
         user_data = create_user(self.api_client, self.make_travisname('OpinelUnitTest003'), ['BlockedUsers', 'AllUsers'])
-        self.assert_user_create(user_data, 1)
+        self.assert_user_create(user_data, 1, True)
         user_data = create_user(self.api_client, self.make_travisname('OpinelUnitTest004'), with_password = True)
         self.assert_user_create(user_data, 0)
         assert 'password' in user_data
@@ -84,8 +84,10 @@ class TestOpinelServicesIAM:
 
 
     def test_delete_virtual_mfa_device(self):
-        # TODO
-        pass
+        try:
+            delete_virtual_mfa_device(self.api_client, 'arn:aws:iam::179374595322:mfa/PhonyUserWithMFA')
+        except Exception as e:
+            assert (e.response['Error']['Code'] == 'AccessDenied')
 
 
     def test_get_access_keys(self):
@@ -102,8 +104,12 @@ class TestOpinelServicesIAM:
 
 
     def test_init_group_category_regex(self):
-        init_group_category_regex(['a', 'b'], ['', '.*hello.*'])
-        pass
+        result = init_group_category_regex(['a', 'b'], ['', '.*hello.*'])
+        assert (type(result) == list)
+        result = init_group_category_regex(['a', 'b'], ['', ''])
+        assert (result == None)
+        result = init_group_category_regex(['a', 'b', 'c'], ['.*hello.*'])
+        assert (result == None)
 
 
     def test_create_groups(self):
@@ -131,7 +137,7 @@ class TestOpinelServicesIAM:
         while True:
             unmodifiable_resource = False
             remaining_resources = []
-            printDebug('Attempting to delete the following %s: %s' % (resource_type, str(resources))            )
+            printDebug('Deleting the following %s: %s' % (resource_type, str(resources))            )
             time.sleep(5)
             for resource in resources:
                 if resource_type == 'groups':
