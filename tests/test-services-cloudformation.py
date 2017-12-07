@@ -126,6 +126,15 @@ class TestOpinelServicesCloudformation:
     def test_wait_for_stack_set(self):
         pass
 
+    def test_cloudformation_wait(self):
+        pass
+
+    def test_create_or_update_stack_set(self):
+        pass
+
+    def test_still_running(self):
+        pass
+
 
     def teardown(self):
         if len(self.cleanup['stacks']):
