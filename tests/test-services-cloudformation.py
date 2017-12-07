@@ -32,7 +32,6 @@ class TestOpinelServicesCloudformation:
         pass
 
     def test_create_stack(self):
-        #create_stack(api_client, stack_name, template_path, template_parameters=[], tags=[], quiet=False)
         stack_name = self.make_travisname('OpinelUnitTestStack001')
         create_stack(self.api_client, stack_name, 'tests/data/cloudformation-001.json')
         self.cleanup['stacks'].append(stack_name)
@@ -49,17 +48,9 @@ class TestOpinelServicesCloudformation:
 
     def test_create_or_update_stack(self):
         stack_name = self.make_travisname('OpinelUnitTestStack003')
-        create_or_update_stack(self.api_client, stack_name, 'tests/data/cloudformation-003.json')
-        timer = 0
-        while True:
-            printError('Checking the stack\'s status...')
-            time.sleep(5)
-            timer += 5
-            stack_info = self.api_client.describe_stacks(StackName = stack_name)
-            if timer > 120 or stack_info['Stacks'][0]['StackStatus'] != 'CREATE_IN_PROGRESS':
-                break
+        create_or_update_stack(self.api_client, stack_name, 'tests/data/cloudformation-003.json', wait_for_completion = True)
         printError('Ready for update !')
-        create_or_update_stack(self.api_client, stack_name, 'tests/data/cloudformation-003.json')
+        create_or_update_stack(self.api_client, stack_name, 'tests/data/cloudformation-003.json', wait_for_completion = True)
         self.cleanup['stacks'].append(stack_name)
         # Trigger exception
         try:
@@ -70,8 +61,7 @@ class TestOpinelServicesCloudformation:
 
     def test_create_stack_instances(self):
         stack_set_name = self.make_travisname('OpinelUnitTestStackSet002')
-        create_stack_set(self.api_client, stack_set_name, 'tests/data/cloudformation-004.json')
-        wait_for_stack_set(self.api_client, stack_set_name)
+        create_stack_set(self.api_client, stack_set_name, 'tests/data/cloudformation-004.json', wait_for_completion = True)
         operation_id = create_stack_instances(self.api_client, stack_set_name, [ get_aws_account_id(self.creds) ], [ 'us-east-1' ])
         wait_for_operation(self.api_client, stack_set_name, operation_id)
         self.cleanup['stacksets'].append(stack_set_name)
@@ -79,8 +69,7 @@ class TestOpinelServicesCloudformation:
 
     def test_create_stack_set(self):
         stack_set_name = self.make_travisname('OpinelUnitTestStackSet001')
-        create_stack_set(self.api_client, stack_set_name, 'tests/data/cloudformation-004.json')
-        wait_for_stack_set(self.api_client, stack_set_name, 0)
+        create_stack_set(self.api_client, stack_set_name, 'tests/data/cloudformation-004.json', wait_for_completion = True)
         self.cleanup['stacksets'].append(stack_set_name)
 
 
