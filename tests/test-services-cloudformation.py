@@ -50,8 +50,8 @@ class TestOpinelServicesCloudformation:
         stack_name = self.make_travisname('OpinelUnitTestStack003')
         create_or_update_stack(self.api_client, stack_name, 'tests/data/cloudformation-003.json', wait_for_completion = True)
         printError('Ready for update !')
-        create_or_update_stack(self.api_client, stack_name, 'tests/data/cloudformation-003.json', wait_for_completion = True)
         self.cleanup['stacks'].append(stack_name)
+        create_or_update_stack(self.api_client, stack_name, 'tests/data/cloudformation-003.json', wait_for_completion = True)
         # Trigger exception
         try:
             create_or_update_stack(self.api_client. stack_name, 'tests/data/cloudformation-003bad.json')
@@ -130,7 +130,16 @@ class TestOpinelServicesCloudformation:
         pass
 
     def test_create_or_update_stack_set(self):
-        pass
+        stack_set_name = self.make_travisname('OpinelUnitTestStackSet003')
+        create_or_update_stack_set(self.api_client, stack_set_name, 'tests/data/cloudformation-005.json', wait_for_completion = True)
+        self.cleanup['stacksets'].append(stack_set_name)
+        printError('Ready for update !')
+        create_or_update_stack_set(self.api_client, stack_set_name, 'tests/data/cloudformation-005.json', wait_for_completion = True)
+        # Trigger exception
+        try:
+            create_or_update_stack_set(self.api_client, stack_set_name, 'tests/data/cloudformation-005bad.json', wait_for_completion = True)
+        except:
+            pass
 
     def test_still_running(self):
         pass
