@@ -31,11 +31,13 @@ class OpinelArgumentParser(object):
                                 action='store_true',
                                 help='Executes read-only actions (check status, describe*, get*, list*...)' if not help else help)
         elif argument_name == 'profile':
+            default = os.environ.get('AWS_PROFILE', 'default')
+            default_origin = " (from AWS_PROFILE)." if 'AWS_PROFILE' in os.environ else "."
             self.parser.add_argument('--profile',
                                 dest='profile',
-                                default= ['default'],
+                                default=[default],
                                 nargs='+',
-                                help='Name of the profile' if not help else help)
+                                help='Name of the profile. Defaults to %(default)s' + default_origin if not help else help)
         elif argument_name == 'regions':
             self.parser.add_argument('--regions',
                                 dest='regions',
