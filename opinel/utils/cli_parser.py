@@ -4,6 +4,7 @@ import argparse
 import json
 import os
 import sys
+import tempfile
 
 opinel_arg_dir = os.path.join(os.path.expanduser('~'), '.aws/opinel')
 
@@ -144,13 +145,28 @@ def read_default_args(tool_name):
     :param tool_name:                   Name of the script to read the default arguments for
     :return:                            Dictionary of default arguments (shared + tool-specific)
     """
+    global opinel_arg_dir
+    
     profile_name = 'default'
     # h4ck to have an early read of the profile name
     for i, arg in enumerate(sys.argv):
         if arg == '--profile' and len(sys.argv) >= i + 1:
             profile_name = sys.argv[i + 1]
+            
     if not os.path.isdir(opinel_arg_dir):
-        os.makedirs(opinel_arg_dir)
+        try:
+            os.makedirs(opinel_arg_dir)
+        except OSError as ex:
+            # Determine if opinel_arg_dir is writable. If not or doesnt exist, create it...
+            #   ... and then set global opinel_arg_dir equal to this value
+            if not os.access(opinel_arg_dir, os.W_OK):
+                # Within AWS Lambda, home directories are not writable. This attempts to detect that...
+                #  ...and uses the /tmp folder, which *is* writable in AWS Lambda
+                opinel_arg_dir = os.path.join(tempfile.gettempdir(), '.aws/opinel')
+                if not os.path.isdir(opinel_arg_dir):
+                    os.makedirs(opinel_arg_dir)
+            else:
+                raise
     opinel_arg_file = os.path.join(opinel_arg_dir, '%s.json' % profile_name)
     default_args = {}
     if os.path.isfile(opinel_arg_file):
