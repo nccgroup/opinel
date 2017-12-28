@@ -152,18 +152,17 @@ def read_default_args(tool_name):
     for i, arg in enumerate(sys.argv):
         if arg == '--profile' and len(sys.argv) >= i + 1:
             profile_name = sys.argv[i + 1]
-            
+    #if not os.path.isdir(opinel_arg_dir):
+    #    os.makedirs(opinel_arg_dir)            
     if not os.path.isdir(opinel_arg_dir):
         try:
-            if not os.path.exists(opinel_arg_dir):
-                os.makedirs(opinel_arg_dir)
+            os.makedirs(opinel_arg_dir)
         except:
             # Within AWS Lambda, home directories are not writable. This attempts to detect that...
             #  ...and uses the /tmp folder, which *is* writable in AWS Lambda
             opinel_arg_dir = os.path.join(tempfile.gettempdir(), '.aws/opinel')
             if not os.path.isdir(opinel_arg_dir):
                 os.makedirs(opinel_arg_dir)
-
     opinel_arg_file = os.path.join(opinel_arg_dir, '%s.json' % profile_name)
     default_args = {}
     if os.path.isfile(opinel_arg_file):
