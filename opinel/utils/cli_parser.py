@@ -155,8 +155,9 @@ def read_default_args(tool_name):
             
     if not os.path.isdir(opinel_arg_dir):
         try:
-            os.makedirs(opinel_arg_dir)
-        except OSError as ex:
+            if not os.path.exists(opinel_arg_dir):
+                os.makedirs(opinel_arg_dir)
+        except:
             # Determine if opinel_arg_dir is writable. If not or doesnt exist, create it...
             #   ... and then set global opinel_arg_dir equal to this value
             if not os.access(opinel_arg_dir, os.W_OK):
