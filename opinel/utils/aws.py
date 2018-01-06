@@ -125,7 +125,7 @@ def handle_truncated_response(callback, params, entities):
             for entity in entities:
                 if entity in response:
                     results[entity] = results[entity] + response[entity]
-            for marker_name in ['NextToken', 'Marker']:
+            for marker_name in ['NextToken', 'Marker', 'PaginationToken']:
                 if marker_name in response and response[marker_name]:
                     params[marker_name] = response[marker_name]
                     marker_found = True
