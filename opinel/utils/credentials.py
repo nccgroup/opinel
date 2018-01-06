@@ -24,12 +24,12 @@ from opinel.utils.aws import connect_service
 re_profile_name = re.compile(r'\[(.*)\]')
 re_access_key = re.compile(r'aws_access_key_id')
 re_secret_key = re.compile(r'aws_secret_access_key')
-
 re_role_arn = re.compile(r'role_arn')
 re_session_token = re.compile(r'aws_session_token')
 re_security_token = re.compile(r'aws_security_token')
 re_expiration = re.compile(r'expiration')
 re_source_profile = re.compile(r'source_profile')
+re_external_id = re.compile(r'aws_external_id')
 
 re_gov_region = re.compile(r'(.*?)-gov-(.*?)')
 re_cn_region = re.compile(r'^cn-(.*?)')
@@ -58,6 +58,7 @@ aws_config_file = os.path.join(aws_config_dir, 'config')
 # Assume role and save credentials
 #
 def assume_role(role_name, credentials, role_arn, role_session_name, silent = False):
+    external_id = credentials.pop('ExternalId') if 'ExternalId' in credentials else None
     # Connect to STS
     sts_client = connect_service('sts', credentials, silent = silent)
     # Set required arguments for assume role call
@@ -70,8 +71,8 @@ def assume_role(role_name, credentials, role_arn, role_session_name, silent = Fa
       sts_args['TokenCode'] = credentials['mfa_code']
       sts_args['SerialNumber'] = credentials['mfa_serial']
     # External ID used ?
-    if 'ExternalId' in credentials and credentials['ExternalId']:
-      sts_args['ExternalId'] = credentials['ExternalId']
+    if external_id:
+      sts_args['ExternalId'] = external_id
     # Assume the role
     sts_response = sts_client.assume_role(**sts_args)
     credentials = sts_response['Credentials']
@@ -257,9 +258,10 @@ def read_creds_from_environment_variables():
 #
 def read_profile_from_aws_config_file(profile_name, config_file = aws_config_file):
     role_arn = None
-    source_profile = None
+    source_profile = 'default'
     mfa_serial = None
     profile_found = False
+    external_id = None
     try:
         with open(config_file, 'rt') as config:
             for line in config:
@@ -277,11 +279,13 @@ def read_profile_from_aws_config_file(profile_name, config_file = aws_config_fil
                         source_profile = line.split('=')[1].strip()
                     elif re_mfa_serial.match(line):
                         mfa_serial = line.split('=')[1].strip()
+                    elif re_external_id.match(line):
+                        external_id = line.split('=')[1].strip()
     except Exception as e:
         # Silent if error is due to no .aws/config file
         if not hasattr(e, 'errno') or e.errno != 2:
             printException(e)
-    return role_arn, source_profile, mfa_serial
+    return role_arn, source_profile, mfa_serial, external_id
 
 
 #
@@ -396,8 +400,11 @@ def read_creds(profile_name, csv_file = None, mfa_serial_arg = None, mfa_code = 
         credentials = read_creds_from_ec2_instance_metadata()
     if not credentials['AccessKeyId'] and not csv_file:
         # Lookup if a role is defined in ~/.aws/config
-        role_arn, source_profile, role_mfa_serial = read_profile_from_aws_config_file(profile_name)
-        if role_arn and source_profile:
+        role_arn, source_profile, role_mfa_serial, external_id = read_profile_from_aws_config_file(profile_name)
+        # Scout2 issue 237 - credentials file may be used to configure role-based profiles...
+        if not role_arn:
+            role_arn, source_profile, role_mfa_serial, external_id = read_profile_from_aws_config_file(profile_name, config_file = aws_credentials_file)
+        if role_arn:
             # Lookup cached credentials
             try:
                 cached_credentials_filename = get_cached_credentials_filename(profile_name, role_arn)
@@ -418,6 +425,8 @@ def read_creds(profile_name, csv_file = None, mfa_serial_arg = None, mfa_code = 
                     # Auto prompt for a code...
                     if not mfa_code:
                         credentials['TokenCode'] = prompt_4_mfa_code()
+                if external_id:
+                    credentials['ExternalId'] = external_id
                 credentials = assume_role(profile_name, credentials, role_arn, role_session_name)
         # Read from ~/.aws/credentials
         else:

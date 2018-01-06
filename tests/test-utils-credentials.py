@@ -23,6 +23,7 @@ class TestOpinelCredentialsClass:
         # Write the test credentials
         if self.write_creds:
             write_creds_to_aws_credentials_file('travislike', self.creds)
+            write_creds_to_aws_credentials_file('default', self.creds)
  
 
     def teardown(self):
@@ -154,25 +155,36 @@ class TestOpinelCredentialsClass:
 
 
     def test_read_profile_from_aws_config_file(self):
-        role_arn, source_profile, mfa_serial = read_profile_from_aws_config_file('l01cd3v-role1', config_file='tests/data/config')
+        role_arn, source_profile, mfa_serial, external_id = read_profile_from_aws_config_file('l01cd3v-role1', config_file='tests/data/config')
         assert role_arn == 'arn:aws:iam::123456789012:role/Role1'
         assert source_profile == 'l01cd3v-1'
         assert mfa_serial == None
-        role_arn, source_profile, mfa_serial = read_profile_from_aws_config_file('l01cd3v-role2', config_file='tests/data/config')
+        role_arn, source_profile, mfa_serial, external_id = read_profile_from_aws_config_file('l01cd3v-role2', config_file='tests/data/config')
         assert role_arn == 'arn:aws:iam::123456789012:role/Role2'
         assert source_profile == 'l01cd3v-2'
         assert mfa_serial == 'arn:aws:iam::123456789222:mfa/l01cd3v'
-        role_arn, source_profile, mfa_serial = read_profile_from_aws_config_file('l01cd3v-role3', config_file='tests/data/config')
+        role_arn, source_profile, mfa_serial, external_id = read_profile_from_aws_config_file('l01cd3v-role3', config_file='tests/data/config')
         assert role_arn == 'arn:aws:iam::123456789012:role/Role3'
         assert source_profile == 'l01cd3v-2'
         assert mfa_serial == 'arn:aws:iam::123456789333:mfa/l01cd3v'
+        assert external_id == 'external-id-for-role3'
+        role_arn, source_profile, mfa_serial, external_id = read_profile_from_aws_config_file('l01cd3v-role4', config_file='tests/data/config')
+        assert role_arn == 'arn:aws:iam::123456789012:role/Role4'
+        assert source_profile == 'default'
+        assert mfa_serial == None
+        assert external_id == None
+        role_arn, source_profile, mfa_serial, external_id = read_profile_from_aws_config_file('scout2fortraviswithexternalid', config_file='tests/data/credentials')
+        assert role_arn == 'arn:aws:iam::179374595322:role/Scout2WithExternalId'
+        assert source_profile == 'default'
+        assert mfa_serial == None
+        assert external_id == 'external-id-for-scout2'
         os.remove(aws_config_file)
-        role_arn, source_profile, mfa_serial = read_profile_from_aws_config_file('l01cd3v-role1')
+        role_arn, source_profile, mfa_serial, external_id = read_profile_from_aws_config_file('l01cd3v-role1')
 
 
     def test_get_profiles_from_aws_credentials_file(self):
         profiles1 = get_profiles_from_aws_credentials_file(credentials_files=['tests/data/credentials'])
-        profiles2 = sorted(['l01cd3v-1', 'l01cd3v-2', 'l01cd3v-3', 'l01cd3v-4', 'testprofile'])
+        profiles2 = sorted(['l01cd3v-1', 'l01cd3v-2', 'l01cd3v-3', 'l01cd3v-4', 'scout2fortraviswithexternalid', 'testprofile'])
         assert profiles1 == profiles2
 
 
@@ -215,3 +227,4 @@ class TestOpinelCredentialsClass:
             f.write(json.dumps(creds))
         creds = read_creds('scout2fortravis')
         creds = read_creds('default')
+        creds = read_creds('scout2fortraviswithexternalid')
