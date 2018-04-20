@@ -154,6 +154,14 @@ class TestOpinelCredentialsClass:
         assert creds['SessionToken'] == 'environment-session/////token'
 
 
+    def test_read_profile_from_environment_variables(self):
+        os.environ['AWS_ROLE_ARN'] = 'arn:aws:iam::123456789012:role/cross_role_test'
+        os.environ['AWS_EXTERNAL_ID'] = '42'
+        role_arn, external_id = read_profile_from_environment_variables()
+        assert role_arn == 'arn:aws:iam::123456789012:role/cross_role_test'
+        assert external_id == '42'
+
+
     def test_read_profile_from_aws_config_file(self):
         role_arn, source_profile, mfa_serial, external_id = read_profile_from_aws_config_file('l01cd3v-role1', config_file='tests/data/config')
         assert role_arn == 'arn:aws:iam::123456789012:role/Role1'
