@@ -239,6 +239,7 @@ def read_creds_from_ec2_instance_metadata():
         pass
     return creds
 
+
 #
 # Read credentials from environment variables
 #
@@ -251,6 +252,15 @@ def read_creds_from_environment_variables():
         if 'AWS_SESSION_TOKEN' in os.environ:
             creds['SessionToken'] = os.environ['AWS_SESSION_TOKEN']
     return creds
+
+
+#
+# Read profiles from env
+#
+def read_profile_from_environment_variables():
+    role_arn = os.environ.get('AWS_ROLE_ARN', None)
+    external_id = os.environ.get('AWS_EXTERNAL_ID', None)
+    return role_arn, external_id
 
 
 #
@@ -286,7 +296,6 @@ def read_profile_from_aws_config_file(profile_name, config_file = aws_config_fil
         if not hasattr(e, 'errno') or e.errno != 2:
             printException(e)
     return role_arn, source_profile, mfa_serial, external_id
-
 
 #
 # Show profile names from ~/.aws/credentials
@@ -388,8 +397,11 @@ def read_creds(profile_name, csv_file = None, mfa_serial_arg = None, mfa_code = 
     :return:
     """
     first_sts_session = False
+    source_profile = None
+    role_mfa_serial = None
     expiration = None
     credentials = init_creds()
+    role_arn, external_id = read_profile_from_environment_variables()
     if csv_file:
         # Read credentials from a CSV file that was provided
         credentials['AccessKeyId'], credentials['SecretAccessKey'], credentials['SerialNumber'] = read_creds_from_csv(csv_file)
@@ -398,9 +410,10 @@ def read_creds(profile_name, csv_file = None, mfa_serial_arg = None, mfa_code = 
         credentials = read_creds_from_environment_variables()
     if ('AccessKeyId' not in credentials or not credentials['AccessKeyId']) and not csv_file and profile_name == 'default':
         credentials = read_creds_from_ec2_instance_metadata()
-    if not credentials['AccessKeyId'] and not csv_file:
+    if role_arn or (not credentials['AccessKeyId'] and not csv_file):
         # Lookup if a role is defined in ~/.aws/config
-        role_arn, source_profile, role_mfa_serial, external_id = read_profile_from_aws_config_file(profile_name)
+        if not role_arn:
+            role_arn, source_profile, role_mfa_serial, external_id = read_profile_from_aws_config_file(profile_name)
         # Scout2 issue 237 - credentials file may be used to configure role-based profiles...
         if not role_arn:
             role_arn, source_profile, role_mfa_serial, external_id = read_profile_from_aws_config_file(profile_name, config_file = aws_credentials_file)
@@ -410,16 +423,19 @@ def read_creds(profile_name, csv_file = None, mfa_serial_arg = None, mfa_code = 
                 cached_credentials_filename = get_cached_credentials_filename(profile_name, role_arn)
                 with open(cached_credentials_filename, 'rt') as f:
                     assume_role_data = json.load(f)
+                    oldcred = credentials
                     credentials = assume_role_data['Credentials']
                     expiration = dateutil.parser.parse(credentials['Expiration'])
                     expiration = expiration.replace(tzinfo=None)
                     current = datetime.datetime.utcnow()
                     if expiration < current:
                         print('Role\'s credentials have expired on %s' % credentials['Expiration'])
+                        credentials = oldcred
             except Exception as e:
                 pass
             if not expiration or expiration < current or credentials['AccessKeyId'] == None:
-                credentials = read_creds(source_profile)
+                if source_profile:
+                    credentials = read_creds(source_profile)
                 if role_mfa_serial:
                     credentials['SerialNumber'] = role_mfa_serial
                     # Auto prompt for a code...
