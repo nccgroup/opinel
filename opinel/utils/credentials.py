@@ -49,7 +49,6 @@ aws_credentials_file_tmp = os.path.join(aws_config_dir, 'credentials.tmp')
 aws_config_file = os.path.join(aws_config_dir, 'config')
 
 
-
 ########################################
 # Credentials read/write functions
 ########################################
@@ -91,7 +90,8 @@ def assume_role(role_name, credentials, role_arn, role_session_name, silent = Fa
 def get_cached_credentials_filename(role_name, role_arn):
     filename_p1 = role_name.replace('/','-')
     filename_p2 = role_arn.replace('/', '-').replace(':', '_')
-    return os.path.join(os.path.join(os.path.expanduser('~'), '.aws'), 'cli/cache/%s--%s.json' % (filename_p1, filename_p2))
+    return os.path.join(os.path.join(os.path.expanduser('~'), '.aws'), 'cli/cache/%s--%s.json' %
+                        (filename_p1, filename_p2))
 
 
 def get_profiles_from_aws_credentials_file(credentials_files = [aws_credentials_file, aws_config_file]):
@@ -112,7 +112,6 @@ def get_profiles_from_aws_credentials_file(credentials_files = [aws_credentials_
                         profiles.append(groups.groups()[0])
     return sorted(profiles)
 
-
 def generate_password(length = 16):
     """
     Generate a password using random characters from uppercase, lowercase, digits, and symbols
@@ -128,12 +127,12 @@ def generate_password(length = 16):
     else:
         return ''.join(chars[i % modulus] for i in pchars)
 
-
 #
 # Create a dictionary with all the necessary keys set to "None"
 #
 def init_creds():
-    return { 'AccessKeyId': None, 'SecretAccessKey': None, 'SessionToken': None, 'Expiration': None, 'SerialNumber': None, 'TokenCode': None }
+    return { 'AccessKeyId': None, 'SecretAccessKey': None, 'SessionToken': None,
+             'Expiration': None, 'SerialNumber': None, 'TokenCode': None }
 
 #
 # Fetch STS credentials
@@ -161,9 +160,6 @@ def init_sts_session(profile_name, credentials, duration = 28800, session_name =
         # Save STS values in the .aws/credentials file
         write_creds_to_aws_credentials_file(profile_name, sts_response['Credentials'])
     return sts_response['Credentials']
-
-
- 
 
 #
 # Read credentials from AWS config file
@@ -231,14 +227,29 @@ def read_creds_from_ec2_instance_metadata():
         has_role = requests.get('http://169.254.169.254/latest/meta-data/iam/security-credentials', timeout = 1)
         if has_role.status_code == 200:
             iam_role = has_role.text
-            credentials = requests.get('http://169.254.169.254/latest/meta-data/iam/security-credentials/%s/' % iam_role.strip()).json()
+            credentials = requests.get('http://169.254.169.254/latest/meta-data/iam/security-credentials/%s/' %
+                                       iam_role.strip()).json()
             for c in ['AccessKeyId', 'SecretAccessKey']:
                 creds[c] = credentials[c]
             creds['SessionToken'] = credentials['Token']
+        return creds
     except Exception as e:
-        pass
-    return creds
+        return False
 
+#
+# Read credentials from ECS instance metadata (IAM role)
+#
+def read_creds_from_ecs_container_metadata():
+    creds = init_creds()
+    try:
+        ecs_metadata_relative_uri = os.environ['AWS_CONTAINER_CREDENTIALS_RELATIVE_URI']
+        credentials = requests.get('http://169.254.170.2' + ecs_metadata_relative_uri, timeout = 1).json()
+        for c in ['AccessKeyId', 'SecretAccessKey']:
+            creds[c] = credentials[c]
+            creds['SessionToken'] = credentials['Token']
+        return creds
+    except Exception as e:
+        return False
 
 #
 # Read credentials from environment variables
@@ -261,7 +272,6 @@ def read_profile_from_environment_variables():
     role_arn = os.environ.get('AWS_ROLE_ARN', None)
     external_id = os.environ.get('AWS_EXTERNAL_ID', None)
     return role_arn, external_id
-
 
 #
 # Read profiles from AWS config file
@@ -377,13 +387,12 @@ def complete_profile(f, credentials, session_token_written, mfa_serial_written):
     if mfa_serial and not mfa_serial_written:
         f.write('aws_mfa_serial = %s\n' % mfa_serial)
 
-
-
 ########################################
 # Main function
 ########################################
 
-def read_creds(profile_name, csv_file = None, mfa_serial_arg = None, mfa_code = None, force_init = False, role_session_name = 'opinel'):
+def read_creds(profile_name, csv_file = None, mfa_serial_arg = None, mfa_code = None, force_init = False,
+               role_session_name = 'opinel'):
     """
     Read credentials from anywhere (CSV, Environment, Instance metadata, config/credentials)
 
@@ -404,19 +413,29 @@ def read_creds(profile_name, csv_file = None, mfa_serial_arg = None, mfa_code = 
     role_arn, external_id = read_profile_from_environment_variables()
     if csv_file:
         # Read credentials from a CSV file that was provided
-        credentials['AccessKeyId'], credentials['SecretAccessKey'], credentials['SerialNumber'] = read_creds_from_csv(csv_file)
+        credentials['AccessKeyId'], credentials['SecretAccessKey'], credentials['SerialNumber'] = \
+            read_creds_from_csv(csv_file)
     elif profile_name == 'default':
         # Try reading credentials from environment variables (Issue #11) if the profile name is 'default'
         credentials = read_creds_from_environment_variables()
-    if ('AccessKeyId' not in credentials or not credentials['AccessKeyId']) and not csv_file and profile_name == 'default':
-        credentials = read_creds_from_ec2_instance_metadata()
+    if ('AccessKeyId' not in credentials or not credentials['AccessKeyId']) \
+            and not csv_file and profile_name == 'default':
+        ec2_credentials = read_creds_from_ec2_instance_metadata()
+        if ec2_credentials:
+            credentials = ec2_credentials
+        else:
+            ecs_credentials = read_creds_from_ecs_container_metadata()
+            if ecs_credentials:
+                credentials = ecs_credentials
+        # TODO support lambda
     if role_arn or (not credentials['AccessKeyId'] and not csv_file):
         # Lookup if a role is defined in ~/.aws/config
         if not role_arn:
             role_arn, source_profile, role_mfa_serial, external_id = read_profile_from_aws_config_file(profile_name)
         # Scout2 issue 237 - credentials file may be used to configure role-based profiles...
         if not role_arn:
-            role_arn, source_profile, role_mfa_serial, external_id = read_profile_from_aws_config_file(profile_name, config_file = aws_credentials_file)
+            role_arn, source_profile, role_mfa_serial, external_id = \
+                read_profile_from_aws_config_file(profile_name, config_file = aws_credentials_file)
         if role_arn:
             # Lookup cached credentials
             try:
@@ -461,7 +480,8 @@ def read_creds(profile_name, csv_file = None, mfa_serial_arg = None, mfa_code = 
             else:
                 first_sts_session = True
             if force_init or (mfa_serial_arg and mfa_code):
-                credentials = read_creds_from_aws_credentials_file(profile_name if first_sts_session else '%s-nomfa' % profile_name)
+                credentials = read_creds_from_aws_credentials_file(profile_name if first_sts_session
+                                                                   else '%s-nomfa' % profile_name)
                 if not credentials['AccessKeyId']:
                     printInfo('Warning: Unable to determine STS token expiration; later API calls may fail.')
                     credentials = sts_credentials
@@ -473,7 +493,8 @@ def read_creds(profile_name, csv_file = None, mfa_serial_arg = None, mfa_code = 
                     if 'AccessKeyId' in credentials and credentials['AccessKeyId']:
                         credentials = init_sts_session(profile_name, credentials)
     # If we don't have valid creds by now, print an error message
-    if 'AccessKeyId' not in credentials or credentials['AccessKeyId'] == None or 'SecretAccessKey' not in credentials or credentials['SecretAccessKey'] == None:
+    if 'AccessKeyId' not in credentials or credentials['AccessKeyId'] == None or \
+            'SecretAccessKey' not in credentials or credentials['SecretAccessKey'] == None:
         printError('Error: could not find AWS credentials. Use the --help option for more information.')
     if not 'AccessKeyId' in credentials:
         credentials = { 'AccessKeyId': None }
