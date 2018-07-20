@@ -97,12 +97,22 @@ class TestOpinelCredentialsClass:
 
 
     def test_read_creds_from_aws_credentials_file(self):
-        test_cases = [{'profile_name': 'l01cd3v-1','credentials_file': 'tests/data/credentials'}, {'profile_name': 'l01cd3v-2','credentials_file': 'tests/data/credentials'}, {'profile_name': 'l01cd3v-3','credentials_file': 'tests/data/credentials'}, {'profile_name': 'l01cd3v-4','credentials_file': 'tests/data/credentials'}]
+        test_cases = [{'profile_name': 'l01cd3v-1','credentials_file': 'tests/data/credentials'},
+                      {'profile_name': 'l01cd3v-2','credentials_file': 'tests/data/credentials'},
+                      {'profile_name': 'l01cd3v-3','credentials_file': 'tests/data/credentials'},
+                      {'profile_name': 'l01cd3v-4','credentials_file': 'tests/data/credentials'}]
         results = [
-         ('AKIAXXXXXXXXXXXXXXX1', 'deadbeefdeadbeefdeadbeefdeadbeef11111111', 'arn:aws:iam::123456789111:mfa/l01cd3v', None),
+         ('AKIAXXXXXXXXXXXXXXX1', 'deadbeefdeadbeefdeadbeefdeadbeef11111111', 'arn:aws:iam::123456789111:mfa/l01cd3v',
+          None),
          ('AKIAXXXXXXXXXXXXXXX2', 'deadbeefdeadbeefdeadbeefdeadbeef22222222', None, None),
-         ('ASIAXXXXXXXXXXXXXXX3', 'deadbeefdeadbeefdeadbeefdeadbeef33333333', None, 'deadbeef333//////////ZGVhZGJlZWZkZWFkYmVlZg==ZGVhZGJlZWZkZWFkYmVlZg==ZGVhZGJlZWZkZWFkYmVlZg==ZGVhZGJlZWZkZWFkYmVlZg==ZGVhZGJlZWZkZWFkYmVlZg==ZGVhZGJlZWZkZWFkYmVlZg==/ZGVhZGJlZWZkZWFkYmVlZg==+ZGVhZGJlZWZkZWFkYmVlZg==ZGVhZGJlZWZkZWFkYmVlZg==ZGVhZGJlZWZkZWFkYmVlZg==/ZGVhZGJlZWZkZWFkYmVlZg==ZGVhZGJlZWZkZWFkYmVlZg=='),
-         ('ASIAXXXXXXXXXXXXXXX4', 'deadbeefdeadbeefdeadbeefdeadbeef44444444', None, 'deadbeef444//////////ZGVhZGJlZWZkZWFkYmVlZg==ZGVhZGJlZWZkZWFkYmVlZg==ZGVhZGJlZWZkZWFkYmVlZg==ZGVhZGJlZWZkZWFkYmVlZg==ZGVhZGJlZWZkZWFkYmVlZg==ZGVhZGJlZWZkZWFkYmVlZg==/ZGVhZGJlZWZkZWFkYmVlZg==+ZGVhZGJlZWZkZWFkYmVlZg==ZGVhZGJlZWZkZWFkYmVlZg==ZGVhZGJlZWZkZWFkYmVlZg==/ZGVhZGJlZWZkZWFkYmVlZg==ZGVhZGJlZWZkZWFkYmVlZg==')]
+         ('ASIAXXXXXXXXXXXXXXX3', 'deadbeefdeadbeefdeadbeefdeadbeef33333333', None,
+          'deadbeef333//////////ZGVhZGJlZWZkZWFkYmVlZg==ZGVhZGJlZWZkZWFkYmVlZg==ZGVhZGJlZWZkZWFkYmVlZg==ZGVhZGJlZWZkZWF'
+          'kYmVlZg==ZGVhZGJlZWZkZWFkYmVlZg==ZGVhZGJlZWZkZWFkYmVlZg==/ZGVhZGJlZWZkZWFkYmVlZg==+ZGVhZGJlZWZkZWFkYmVlZg==Z'
+          'GVhZGJlZWZkZWFkYmVlZg==ZGVhZGJlZWZkZWFkYmVlZg==/ZGVhZGJlZWZkZWFkYmVlZg==ZGVhZGJlZWZkZWFkYmVlZg=='),
+         ('ASIAXXXXXXXXXXXXXXX4', 'deadbeefdeadbeefdeadbeefdeadbeef44444444', None,
+          'deadbeef444//////////ZGVhZGJlZWZkZWFkYmVlZg==ZGVhZGJlZWZkZWFkYmVlZg==ZGVhZGJlZWZkZWFkYmVlZg==ZGVhZGJlZWZkZWF'
+          'kYmVlZg==ZGVhZGJlZWZkZWFkYmVlZg==ZGVhZGJlZWZkZWFkYmVlZg==/ZGVhZGJlZWZkZWFkYmVlZg==+ZGVhZGJlZWZkZWFkYmVlZg==Z'
+          'GVhZGJlZWZkZWFkYmVlZg==ZGVhZGJlZWZkZWFkYmVlZg==/ZGVhZGJlZWZkZWFkYmVlZg==ZGVhZGJlZWZkZWFkYmVlZg==')]
         for test_case, result in zip(test_cases, results):
             credentials = {}
             credentials = read_creds_from_aws_credentials_file(**test_case)
@@ -163,25 +173,30 @@ class TestOpinelCredentialsClass:
 
 
     def test_read_profile_from_aws_config_file(self):
-        role_arn, source_profile, mfa_serial, external_id = read_profile_from_aws_config_file('l01cd3v-role1', config_file='tests/data/config')
+        role_arn, source_profile, mfa_serial, external_id = \
+            read_profile_from_aws_config_file('l01cd3v-role1', config_file='tests/data/config')
         assert role_arn == 'arn:aws:iam::123456789012:role/Role1'
         assert source_profile == 'l01cd3v-1'
         assert mfa_serial == None
-        role_arn, source_profile, mfa_serial, external_id = read_profile_from_aws_config_file('l01cd3v-role2', config_file='tests/data/config')
+        role_arn, source_profile, mfa_serial, external_id = \
+            read_profile_from_aws_config_file('l01cd3v-role2', config_file='tests/data/config')
         assert role_arn == 'arn:aws:iam::123456789012:role/Role2'
         assert source_profile == 'l01cd3v-2'
         assert mfa_serial == 'arn:aws:iam::123456789222:mfa/l01cd3v'
-        role_arn, source_profile, mfa_serial, external_id = read_profile_from_aws_config_file('l01cd3v-role3', config_file='tests/data/config')
+        role_arn, source_profile, mfa_serial, external_id = \
+            read_profile_from_aws_config_file('l01cd3v-role3', config_file='tests/data/config')
         assert role_arn == 'arn:aws:iam::123456789012:role/Role3'
         assert source_profile == 'l01cd3v-2'
         assert mfa_serial == 'arn:aws:iam::123456789333:mfa/l01cd3v'
         assert external_id == 'external-id-for-role3'
-        role_arn, source_profile, mfa_serial, external_id = read_profile_from_aws_config_file('l01cd3v-role4', config_file='tests/data/config')
+        role_arn, source_profile, mfa_serial, external_id = \
+            read_profile_from_aws_config_file('l01cd3v-role4', config_file='tests/data/config')
         assert role_arn == 'arn:aws:iam::123456789012:role/Role4'
         assert source_profile == 'default'
         assert mfa_serial == None
         assert external_id == None
-        role_arn, source_profile, mfa_serial, external_id = read_profile_from_aws_config_file('scout2fortraviswithexternalid', config_file='tests/data/credentials')
+        role_arn, source_profile, mfa_serial, external_id = \
+            read_profile_from_aws_config_file('scout2fortraviswithexternalid', config_file='tests/data/credentials')
         assert role_arn == 'arn:aws:iam::179374595322:role/Scout2WithExternalId'
         assert source_profile == 'default'
         assert mfa_serial == None
@@ -192,7 +207,8 @@ class TestOpinelCredentialsClass:
 
     def test_get_profiles_from_aws_credentials_file(self):
         profiles1 = get_profiles_from_aws_credentials_file(credentials_files=['tests/data/credentials'])
-        profiles2 = sorted(['l01cd3v-1', 'l01cd3v-2', 'l01cd3v-3', 'l01cd3v-4', 'scout2fortraviswithexternalid', 'testprofile'])
+        profiles2 = sorted(['l01cd3v-1', 'l01cd3v-2', 'l01cd3v-3', 'l01cd3v-4',
+                            'scout2fortraviswithexternalid', 'testprofile'])
         assert profiles1 == profiles2
 
 
