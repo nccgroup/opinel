@@ -152,7 +152,7 @@ class TestOpinelCredentialsClass:
         creds = read_creds_from_ec2_instance_metadata()
 
 
-    def test_read_creds_from_ecs_instance_metadata(self):
+    def test_read_creds_from_ecs_container_metadata(self):
         creds = read_creds_from_ecs_container_metadata()
 
 
