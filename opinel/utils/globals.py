@@ -67,10 +67,13 @@ def check_versions(min_version, installed_version, max_version, package_name, st
         # If no minimum version was specified, pass
         return True
     if StrictVersion(installed_version) < StrictVersion(min_version):
-        printError('Error: the version of %s installed on this system (%s) is too old. You need at least version %s to run this tool.' % (package_name, OPINEL_VERSION, min_version))
+        printError('Error: the version of %s installed on this system (%s) is too old. '
+                   'You need at least version %s to run this tool.' % (package_name, OPINEL_VERSION, min_version))
         return False
     if max_version and StrictVersion(installed_version) >= StrictVersion(max_version):
-        printError('Warning: ther version of %s installed on this system (%s) is too recent; you may experience unexpected runtime errors as versions above %s have not been tested.' % (package_name, installed_version, max_version))
+        printError('Warning: ther version of %s installed on this system (%s) is too recent; '
+                   'you may experience unexpected runtime errors as versions above %s have not been tested.' %
+                   (package_name, installed_version, max_version))
         if strict:
             printError('Warning treated as error.')
             return False
