@@ -152,6 +152,10 @@ class TestOpinelCredentialsClass:
         creds = read_creds_from_ec2_instance_metadata()
 
 
+    def test_read_creds_from_ecs_instance_metadata(self):
+        creds = read_creds_from_ecs_container_metadata()
+
+
     def test_read_creds_from_environment_variables(self):
         os.environ['AWS_ACCESS_KEY_ID'] = 'environment-AKIAJJ5TE81PVO72WPTQ'
         os.environ['AWS_SECRET_ACCESS_KEY'] = 'environment-67YkvxJ8Qx0EI97NvlIyM9kVz/uKddd0z0uGj123'
